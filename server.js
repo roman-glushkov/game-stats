@@ -167,6 +167,7 @@ if (fs.existsSync(statsPath)) {
   }
 }
 
+console.log("PORT ENV =", process.env.PORT);
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Сервер запущен на порту ${PORT}`);
   console.log(`📁 Public: ${PUBLIC_DIR}`);
