@@ -1,3 +1,4 @@
+console.log("=== SERVER STARTED ===", new Date().toISOString());
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
