@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🏆 Game Stats Tracker</title>
+
+    <!-- Подключаем стили -->
+    <link rel="stylesheet" href="css/style.css" />
+
+    <!-- Подключаем Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Шапка -->
+      <header class="app-header">
+        <div class="logo">
+          <span class="logo-icon">🎮</span>
+          <h1>GameStats Pro</h1>
+        </div>
+        <div class="header-controls">
+          <button class="btn btn-outline" id="exportDataBtn">📤 Экспорт</button>
+          <button class="btn btn-outline" id="importDataBtn">📥 Импорт</button>
+          <input
+            type="file"
+            id="importFileInput"
+            accept=".json"
+            style="display: none"
+          />
+        </div>
+      </header>
+
+      <!-- Основной контент -->
+      <main class="main-content">
+        <!-- Боковая панель -->
+        <aside class="sidebar">
+          <div class="sidebar-section">
+            <h3>📊 Статистика</h3>
+            <div class="stats-summary" id="statsSummary">
+              <div class="stat-item">
+                <span class="stat-label">Всего игр</span>
+                <span class="stat-value" id="totalGames">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Игроков</span>
+                <span class="stat-value" id="totalPlayers">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Всего побед</span>
+                <span class="stat-value" id="totalWins">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-section">
+            <h3>👥 Игроки</h3>
+            <div class="tree-view" id="playerTree">
+              <!-- Дерево игроков -->
+            </div>
+          </div>
+
+          <div class="sidebar-section">
+            <h3>🎯 Быстрые действия</h3>
+            <button class="btn btn-primary btn-block" id="showAddPlayerModal">
+              ➕ Добавить игрока
+            </button>
+            <button class="btn btn-success btn-block" id="showAddGameModal">
+              ➕ Добавить игру
+            </button>
+            <button class="btn btn-danger btn-block" id="clearHistoryBtn">
+              🗑️ Сбросить всё
+            </button>
+          </div>
+        </aside>
+
+        <!-- Основная область -->
+        <section class="content">
+          <!-- Таблица статистики -->
+          <div class="card">
+            <div class="card-header">
+              <h2>📈 Таблица лидеров</h2>
+              <div class="card-actions">
+                <select id="gameFilter" class="filter-select">
+                  <option value="all">🎮 Все игры</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="table-wrapper">
+                <table class="stats-table" id="statsTable">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Игрок</th>
+                      <th>🏆 Победы</th>
+                      <th>😵 Поражения</th>
+                      <th>📊 % побед</th>
+                      <th>🎯 Игр сыграно</th>
+                      <th>🎮 Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody id="statsBody">
+                    <tr>
+                      <td colspan="7" class="empty-state">Нет данных</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Графики -->
+          <div class="card">
+            <div class="card-header">
+              <h2>📊 Визуализация</h2>
+              <div class="card-actions">
+                <button class="btn btn-sm" id="refreshChartsBtn">
+                  🔄 Обновить
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="charts-grid">
+                <div class="chart-box">
+                  <h4>Победы по игрокам</h4>
+                  <canvas id="barChart"></canvas>
+                </div>
+                <div class="chart-box">
+                  <h4>Распределение побед</h4>
+                  <canvas id="pieChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Статистика по играм -->
+          <div class="card">
+            <div class="card-header">
+              <h2>🎮 Статистика по играм</h2>
+            </div>
+            <div class="card-body">
+              <div class="games-stats-grid" id="gamesStatsGrid">
+                <p class="empty-state">Нет данных по играм</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Футер -->
+      <footer class="app-footer">
+        <p>© 2026 GameStats Pro — Сделано с ❤️</p>
+        <p class="footer-info">
+          Данные сохраняются в <code>data/stats.json</code>
+        </p>
+      </footer>
+    </div>
+
+    <!-- Модальные окна -->
+    <div class="modal" id="addPlayerModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>➕ Добавить игрока</h2>
+          <button class="modal-close" id="closePlayerModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Имя игрока</label>
+            <input type="text" id="playerNameInput" placeholder="Введите имя" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="cancelPlayerModal">
+            Отмена
+          </button>
+          <button class="btn btn-primary" id="savePlayerBtn">Добавить</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="addGameModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>🎮 Добавить результат игры</h2>
+          <button class="modal-close" id="closeGameModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Название игры</label>
+            <select id="gameSelect">
+              <option value="Покер">🃏 Покер</option>
+              <option value="Дурак">🃏 Дурак</option>
+              <option value="Уно">🎴 Уно</option>
+              <option value="Шахматы">♟️ Шахматы</option>
+              <option value="Домино">🀄 Домино</option>
+              <option value="Мафия">🕵️ Мафия</option>
+              <option value="Имаджинариум">🎨 Имаджинариум</option>
+              <option value="Другое">🎲 Другое</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>🏆 Победитель</label>
+            <select id="winnerSelect">
+              <option value="">-- выберите --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>😵 Проигравший</label>
+            <select id="loserSelect">
+              <option value="">-- выберите --</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="cancelGameModal">Отмена</button>
+          <button class="btn btn-success" id="saveGameBtn">✅ Сохранить</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Подключаем JavaScript -->
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
