@@ -20,20 +20,55 @@ class App {
 
   async init() {
     await this.dataManager.loadData();
+    this.setupTheme();
     this.setupEventListeners();
     this.setupNavigation();
     this.setupAuth();
     this.renderAll();
 
+    if (!this.dataManager.hasUsers()) {
+      setTimeout(() => {
+        this.openModal("firstAdminModal");
+      }, 500);
+    }
+
     window.app = this;
     console.log("🏆 GameStats Pro загружен!");
+  }
+
+  // ===== ТЕМА =====
+  setupTheme() {
+    const savedTheme = localStorage.getItem("gameStats_theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    this.updateThemeButton(savedTheme);
+
+    document.getElementById("themeToggle")?.addEventListener("click", () => {
+      const currentTheme = document.documentElement.getAttribute("data-theme");
+      const newTheme = currentTheme === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", newTheme);
+      localStorage.setItem("gameStats_theme", newTheme);
+      this.updateThemeButton(newTheme);
+    });
+  }
+
+  updateThemeButton(theme) {
+    const btn = document.getElementById("themeToggle");
+    if (!btn) return;
+
+    if (theme === "dark") {
+      btn.innerHTML = "☀️ Светлая тема";
+      btn.className = "btn btn-outline";
+    } else {
+      btn.innerHTML = "🌙 Тёмная тема";
+      btn.className = "btn btn-outline";
+    }
   }
 
   renderAll() {
     this.statsRenderer.renderAll();
     this.chartManager.renderAll();
     this.renderDashboard();
-    this.renderTopPlayers();
+    this.renderTopLosers();
     this.renderPlayersList();
     this.renderUsersList();
     this.updateNavBadge();
@@ -72,10 +107,15 @@ class App {
     }
   }
 
-  renderTopPlayers() {
+  renderTopLosers() {
     const players = this.dataManager.getAllStats("all");
-    const sorted = [...players].sort((a, b) => b.wins - a.wins).slice(0, 3);
-    const container = document.getElementById("topPlayers");
+    const sorted = [...players].sort((a, b) => b.losses - a.losses).slice(0, 3);
+    const container = document.getElementById("topLosers");
+
+    if (!container) {
+      console.warn("⚠️ Элемент topLosers не найден");
+      return;
+    }
 
     if (!sorted || sorted.length === 0) {
       container.innerHTML = '<div class="empty-state">Нет данных</div>';
@@ -88,7 +128,7 @@ class App {
     container.innerHTML = sorted
       .map(
         (p, i) => `
-      <div class="top-player-item">
+      <div class="top-player-item loser-item">
         <div class="top-player-rank ${rankClasses[i] || ""}">${medals[i]}</div>
         <div class="top-player-avatar" style="background: ${this.getColor(
           p.name
@@ -97,7 +137,7 @@ class App {
         </div>
         <div class="top-player-info">
           <div class="top-player-name">${p.name}</div>
-          <div class="top-player-stats">🏆 ${p.wins} побед • ${
+          <div class="top-player-stats">😵 ${p.losses} поражений • ${
           p.winRate
         }% WR</div>
         </div>
@@ -396,7 +436,6 @@ class App {
       if (loginSettingsBtn) loginSettingsBtn.style.display = "none";
       if (logoutSettingsBtn) logoutSettingsBtn.style.display = "inline-flex";
 
-      // Показываем управление пользователями только админу
       if (userManagement) {
         userManagement.style.display =
           this.userRole === "admin" ? "block" : "none";
@@ -638,6 +677,78 @@ class App {
         }
       });
     });
+
+    // Создание первого администратора
+    document
+      .getElementById("createFirstAdminBtn")
+      ?.addEventListener("click", async () => {
+        const login = document.getElementById("firstAdminLogin")?.value.trim();
+        const password = document
+          .getElementById("firstAdminPassword")
+          ?.value.trim();
+        const confirm = document
+          .getElementById("firstAdminPasswordConfirm")
+          ?.value.trim();
+
+        if (!login || login.length < 3) {
+          alert("❌ Логин должен быть не менее 3 символов");
+          return;
+        }
+
+        if (!password || password.length < 3) {
+          alert("❌ Пароль должен быть не менее 3 символов");
+          return;
+        }
+
+        if (password !== confirm) {
+          alert("❌ Пароли не совпадают");
+          return;
+        }
+
+        const users = this.dataManager.getUsers();
+        if (users.some((u) => u.login === login)) {
+          alert("❌ Такой логин уже существует");
+          return;
+        }
+
+        const result = await this.dataManager.addUser(login, password, "admin");
+        if (result) {
+          alert("✅ Администратор создан! Теперь вы можете войти.");
+          this.closeModal("firstAdminModal");
+
+          const loginResult = this.dataManager.checkLogin(login, password);
+          if (loginResult.success) {
+            this.isLoggedIn = true;
+            this.currentUser = loginResult.login;
+            this.userRole = loginResult.role;
+            this.updateAuthUI();
+            this.renderAll();
+            alert(`✅ Добро пожаловать, ${login}!`);
+          }
+        } else {
+          alert("❌ Ошибка создания администратора");
+        }
+      });
+
+    // Enter в полях создания первого админа
+    document
+      .getElementById("firstAdminLogin")
+      ?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter")
+          document.getElementById("firstAdminPassword")?.focus();
+      });
+    document
+      .getElementById("firstAdminPassword")
+      ?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter")
+          document.getElementById("firstAdminPasswordConfirm")?.focus();
+      });
+    document
+      .getElementById("firstAdminPasswordConfirm")
+      ?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter")
+          document.getElementById("createFirstAdminBtn")?.click();
+      });
   }
 
   openModal(id) {

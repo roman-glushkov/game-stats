@@ -37,11 +37,12 @@ export class DataManager {
           console.log("✅ Логины загружены:", this.logins);
         } else {
           this.logins = JSON.parse(JSON.stringify(DEFAULT_LOGINS));
+          await this.saveLogins();
         }
       } catch (e) {
-        console.warn("⚠️ Не удалось загрузить логины");
+        console.warn("⚠️ Ошибка загрузки логинов:", e.message);
         this.logins = JSON.parse(JSON.stringify(DEFAULT_LOGINS));
-        // Не создаём автоматически, просто используем пустые
+        await this.saveLogins();
       }
 
       return this.data;
@@ -110,11 +111,9 @@ export class DataManager {
 
   // ===== АВТОРИЗАЦИЯ =====
   checkLogin(login, password) {
-    // Проверяем админов
     if (this.logins.admins && this.logins.admins[login] === password) {
       return { success: true, role: "admin", login };
     }
-    // Проверяем пользователей
     if (this.logins.users && this.logins.users[login] === password) {
       return { success: true, role: "user", login };
     }
@@ -125,7 +124,6 @@ export class DataManager {
     login = login.trim();
     if (!login || !password) return false;
 
-    // Проверяем, не существует ли уже такой логин
     if (this.logins.admins[login] || this.logins.users[login]) {
       return false;
     }
@@ -182,6 +180,12 @@ export class DataManager {
       users.push({ login, role: "user" });
     });
     return users;
+  }
+
+  hasUsers() {
+    const adminsCount = Object.keys(this.logins.admins || {}).length;
+    const usersCount = Object.keys(this.logins.users || {}).length;
+    return adminsCount + usersCount > 0;
   }
 
   // ===== Получение игр =====

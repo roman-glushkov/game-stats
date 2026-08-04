@@ -113,7 +113,7 @@
             <div class="mvp-card">
               <div class="mvp-crown">👑</div>
               <div>
-                <div class="mvp-label">MVP недели</div>
+                <div class="mvp-label">Лидер</div>
                 <div class="mvp-name" id="mvpName">Нет данных</div>
               </div>
               <div class="mvp-stat">
@@ -126,12 +126,16 @@
               </div>
             </div>
 
+            <!-- ТОП-3 ЛУЗЕРОВ -->
             <div class="card">
               <div class="card-header">
-                <h2>🏆 Топ-3 лидеров</h2>
+                <h2>😵 Топ-3 лузеров</h2>
+                <span style="color: var(--text-secondary); font-size: 13px"
+                  >Больше всех проиграли</span
+                >
               </div>
               <div class="card-body">
-                <div id="topPlayers" class="top-players">
+                <div id="topLosers" class="top-players">
                   <div class="empty-state">Нет данных</div>
                 </div>
               </div>
@@ -462,6 +466,50 @@
         <div class="modal-footer">
           <button class="btn btn-secondary" id="cancelUserModal">Отмена</button>
           <button class="btn btn-success" id="saveUserBtn">➕ Добавить</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модалка для создания первого администратора -->
+    <div class="modal" id="firstAdminModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>👑 Создание первого администратора</h2>
+        </div>
+        <div class="modal-body">
+          <p style="color: var(--text-secondary); margin-bottom: 20px">
+            В системе нет пользователей. Создайте первого администратора для
+            входа в систему.
+          </p>
+          <div class="form-group">
+            <label>Логин администратора</label>
+            <input
+              type="text"
+              id="firstAdminLogin"
+              placeholder="Введите логин"
+            />
+          </div>
+          <div class="form-group">
+            <label>Пароль</label>
+            <input
+              type="password"
+              id="firstAdminPassword"
+              placeholder="Введите пароль (мин. 3 символа)"
+            />
+          </div>
+          <div class="form-group">
+            <label>Подтверждение пароля</label>
+            <input
+              type="password"
+              id="firstAdminPasswordConfirm"
+              placeholder="Повторите пароль"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" id="createFirstAdminBtn">
+            ✅ Создать администратора
+          </button>
         </div>
       </div>
     </div>

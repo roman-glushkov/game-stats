@@ -32,6 +32,32 @@
   --sidebar-width: 240px;
 }
 
+/* Светлая тема */
+[data-theme="light"] {
+  --bg: #f0f2f5;
+  --bg-secondary: #ffffff;
+  --bg-card: rgba(0, 0, 0, 0.03);
+  --border: rgba(0, 0, 0, 0.1);
+  --border-hover: rgba(0, 0, 0, 0.2);
+  --text: #1a1a2e;
+  --text-secondary: #4a4a6a;
+  --text-muted: #6b6b8a;
+  --shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+}
+
+/* Тёмная тема (по умолчанию) */
+[data-theme="dark"] {
+  --bg: #0a0e1a;
+  --bg-secondary: #111827;
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
+  --text: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
 body {
   font-family: -apple-system, "Inter", "Segoe UI", sans-serif;
   background: var(--bg);
@@ -1133,4 +1159,210 @@ body {
 
 .modal-content {
   cursor: default;
+}
+
+/* =============================== МОБИЛЬНАЯ АДАПТАЦИЯ ТАБЛИЦЫ ================================= */
+
+/* Для экранов меньше 768px */
+@media (max-width: 768px) {
+  .table-wrapper {
+    overflow-x: visible;
+  }
+
+  .stats-table {
+    display: block;
+    width: 100%;
+  }
+
+  .stats-table thead {
+    display: none;
+  }
+
+  .stats-table tbody {
+    display: block;
+  }
+
+  .stats-table tr {
+    display: block;
+    margin-bottom: 16px;
+    padding: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: var(--transition);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .stats-table tr:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    border-color: var(--border-hover);
+  }
+
+  /* Шапка карточки с именем и рангом */
+  .stats-table tr td:first-child {
+    background: var(--bg-secondary);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  .stats-table tr td:first-child .rank {
+    font-size: 14px;
+    padding: 4px 14px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .stats-table tr td:first-child .rank.rank-1 {
+    background: rgba(250, 204, 21, 0.15);
+    color: #facc15;
+  }
+  .stats-table tr td:first-child .rank.rank-2 {
+    background: rgba(203, 213, 225, 0.1);
+    color: #cbd5e1;
+  }
+  .stats-table tr td:first-child .rank.rank-3 {
+    background: rgba(251, 146, 60, 0.15);
+    color: #fb923c;
+  }
+
+  .stats-table tr td:first-child .player-name-mobile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .stats-table tr td:first-child .player-name-mobile .avatar-mobile {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
+  }
+
+  /* Остальные поля */
+  .stats-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    font-size: 14px;
+  }
+
+  .stats-table td:last-child {
+    border-bottom: none;
+    padding: 12px 16px;
+  }
+
+  .stats-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .stats-table td .stat-value {
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .stats-table td .stat-value.wins {
+    color: var(--success);
+  }
+
+  .stats-table td .stat-value.losses {
+    color: var(--danger);
+  }
+
+  .stats-table td .stat-value.rate {
+    color: var(--primary);
+  }
+
+  /* Действия - кнопки в ряд */
+  .stats-table td:last-child {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .stats-table td:last-child::before {
+    display: none;
+  }
+
+  .stats-table td .btn {
+    font-size: 13px;
+    padding: 6px 16px;
+    border-radius: 8px;
+    min-width: 44px;
+    justify-content: center;
+  }
+
+  .stats-table td .btn-success {
+    background: linear-gradient(135deg, var(--success), #16a34a);
+  }
+  .stats-table td .btn-success:hover {
+    box-shadow: 0 4px 16px rgba(34, 197, 94, 0.35);
+  }
+
+  .stats-table td .btn-danger {
+    background: linear-gradient(135deg, var(--danger), #dc2626);
+  }
+  .stats-table td .btn-danger:hover {
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35);
+  }
+
+  .stats-table .empty-state {
+    display: block;
+    text-align: center;
+    padding: 30px;
+  }
+
+  /* Убираем лишнее */
+  .stats-table td:first-child::before {
+    display: none;
+  }
+}
+
+/* Для очень маленьких экранов (до 400px) */
+@media (max-width: 400px) {
+  .stats-table tr td:first-child {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  .stats-table tr td:first-child .player-name-mobile .avatar-mobile {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+
+  .stats-table td {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .stats-table td .btn {
+    font-size: 12px;
+    padding: 4px 12px;
+    min-width: 38px;
+  }
+
+  .stats-table tr {
+    margin-bottom: 12px;
+  }
 }
