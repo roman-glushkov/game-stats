@@ -6,7 +6,7 @@ const path = require("path");
 const PORT = process.env.PORT || 3000;
 
 const PUBLIC_DIR = path.join(__dirname, "public");
-const DATA_DIR = path.join(__dirname, "data");
+const DATA_DIR = "/app/data";
 const statsPath = path.join(DATA_DIR, "stats.json");
 const loginsPath = path.join(DATA_DIR, "logins.json");
 
