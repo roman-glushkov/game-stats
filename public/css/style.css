@@ -1,4 +1,9 @@
-/* ===== Глобальные стили ===== */
+/* =====================================================
+   GameStats Pro v3.0 — VK-style Sidebar
+===================================================== */
+
+/* =============================== RESET ================================= */
+
 * {
   margin: 0;
   padding: 0;
@@ -6,143 +11,276 @@
 }
 
 :root {
-  --primary: #4a90e2;
-  --primary-dark: #357ab8;
-  --success: #27ae60;
-  --danger: #e74c3c;
-  --warning: #f39c12;
-  --gray: #95a5a6;
-  --light-gray: #ecf0f1;
-  --dark: #2c3e50;
-  --bg: #f0f2f5;
-  --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  --radius: 12px;
-  --transition: 0.3s ease;
+  --bg: #0a0e1a;
+  --bg-secondary: #111827;
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
+  --primary: #4f8cff;
+  --primary-dark: #2563eb;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --purple: #8b5cf6;
+  --text: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --transition: 0.25s ease;
+  --sidebar-width: 240px;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, sans-serif;
+  font-family: -apple-system, "Inter", "Segoe UI", sans-serif;
   background: var(--bg);
-  color: var(--dark);
+  color: var(--text);
   min-height: 100vh;
 }
 
-/* ===== Контейнер приложения ===== */
+/* =============================== APP ================================= */
+
 .app-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 20px;
+  display: flex;
   min-height: 100vh;
+}
+
+/* =============================== SIDEBAR NAV ================================= */
+
+.sidebar-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  padding: 20px 16px;
   display: flex;
   flex-direction: column;
+  z-index: 100;
+  transition: transform 0.3s ease;
+  overflow-y: auto;
 }
 
-/* ===== Шапка ===== */
-.app-header {
-  background: white;
-  padding: 15px 25px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 25px;
-}
-
-.logo {
+.sidebar-brand {
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 8px 12px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
 }
 
-.logo-icon {
-  font-size: 2rem;
+.brand-icon {
+  font-size: 28px;
 }
 
-.app-header h1 {
-  font-size: 1.8rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--primary), var(--success));
+.brand-text {
+  font-size: 20px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.header-controls {
+.nav-menu {
+  flex: 1;
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 4px;
 }
 
-/* ===== Кнопки ===== */
-.btn {
-  padding: 8px 18px;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  text-decoration: none;
   transition: var(--transition);
+  cursor: pointer;
+  position: relative;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.nav-item.active {
+  background: rgba(79, 140, 255, 0.12);
+  color: var(--primary);
+}
+
+.nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 24px;
+  background: var(--primary);
+  border-radius: 0 4px 4px 0;
+}
+
+.nav-icon {
+  font-size: 20px;
+  width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.nav-label {
+  font-size: 14px;
+  font-weight: 500;
+  flex: 1;
+}
+
+.nav-badge {
+  background: var(--primary);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 20px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.sidebar-actions {
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-actions .btn {
+  padding: 10px;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+}
+
+/* =============================== MAIN CONTENT ================================= */
+
+.main-content {
+  margin-left: var(--sidebar-width);
+  flex: 1;
+  padding: 20px 30px 30px 30px;
+  min-height: 100vh;
+}
+
+/* =============================== HEADER ================================= */
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0 20px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-left h1 {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.btn-mobile-menu {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.header-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.user-status {
+  color: var(--text-secondary);
+  font-size: 14px;
+  padding: 6px 14px;
+  background: var(--bg-card);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+
+/* =============================== BUTTONS ================================= */
+
+.btn {
+  border: none;
+  cursor: pointer;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 14px;
+  color: white;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 8px;
+  transition: var(--transition);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-hover);
 }
 
 .btn-primary {
-  background: var(--primary);
-  color: white;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border: none;
 }
 .btn-primary:hover {
-  background: var(--primary-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+  box-shadow: 0 4px 20px rgba(79, 140, 255, 0.35);
 }
 
 .btn-success {
-  background: var(--success);
-  color: white;
+  background: linear-gradient(135deg, var(--success), #16a34a);
+  border: none;
 }
 .btn-success:hover {
-  background: #219a52;
-  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.35);
 }
 
 .btn-danger {
-  background: var(--danger);
-  color: white;
-}
-.btn-danger:hover {
-  background: #c0392b;
-}
-
-.btn-warning {
-  background: var(--warning);
-  color: white;
-}
-.btn-warning:hover {
-  background: #d68910;
+  background: linear-gradient(135deg, var(--danger), #dc2626);
+  border: none;
 }
 
 .btn-secondary {
-  background: var(--light-gray);
-  color: var(--dark);
-}
-.btn-secondary:hover {
-  background: #d5dbe0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
 }
 
 .btn-outline {
   background: transparent;
-  border: 2px solid var(--light-gray);
-  color: var(--dark);
-}
-.btn-outline:hover {
-  border-color: var(--primary);
-  color: var(--primary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
 }
 
-.btn-sm {
-  padding: 5px 12px;
-  font-size: 0.85rem;
+.btn-outline:hover {
+  background: var(--bg-card);
+  border-color: var(--border-hover);
+  color: var(--text);
 }
 
 .btn-block {
@@ -150,174 +288,175 @@ body {
   justify-content: center;
 }
 
-/* ===== Основной макет ===== */
-.main-content {
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+/* =============================== SECTIONS ================================= */
+
+.section {
+  display: none;
+  animation: fadeUp 0.4s ease;
+}
+
+.section.active {
+  display: block;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =============================== STATS GRID ================================= */
+
+.stats-grid {
   display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 25px;
-  flex: 1;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-/* ===== Боковая панель ===== */
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.sidebar-section {
-  background: white;
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 18px 20px;
-  box-shadow: var(--shadow);
-}
-
-.sidebar-section h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: var(--dark);
-  border-bottom: 2px solid var(--light-gray);
-  padding-bottom: 8px;
-}
-
-/* ===== Дерево игроков ===== */
-.tree-view {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.tree-node {
-  padding: 6px 0;
-  border-bottom: 1px solid #f5f6f8;
-}
-
-.tree-node:last-child {
-  border-bottom: none;
-}
-
-.tree-item {
+  padding: 20px 24px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
-  border-radius: 6px;
+  gap: 16px;
   transition: var(--transition);
-  cursor: default;
 }
 
-.tree-item:hover {
-  background: var(--bg);
+.stat-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
 }
 
-.tree-item .player-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--primary);
-  color: white;
+.stat-icon {
+  font-size: 32px;
+  width: 56px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 0.9rem;
+  background: rgba(79, 140, 255, 0.1);
+  border-radius: var(--radius-sm);
 }
 
-.tree-item .player-info {
-  flex: 1;
-}
-
-.tree-item .player-name {
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-.tree-item .player-stats {
-  font-size: 0.8rem;
-  color: var(--gray);
-}
-
-.tree-item .player-badge {
-  background: var(--light-gray);
-  padding: 2px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.tree-children {
-  margin-left: 20px;
-  border-left: 2px solid var(--light-gray);
-  padding-left: 15px;
-}
-
-.tree-toggle {
-  cursor: pointer;
-  user-select: none;
-  transition: var(--transition);
-}
-
-.tree-toggle:hover {
-  color: var(--primary);
-}
-
-/* ===== Статистика в сайдбаре ===== */
-.stats-summary {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.stat-item {
-  background: var(--bg);
-  padding: 10px;
-  border-radius: 8px;
-  text-align: center;
-}
-
-.stat-label {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--gray);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.stat-info {
+  display: flex;
+  flex-direction: column;
 }
 
 .stat-value {
-  display: block;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--dark);
-  margin-top: 4px;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.2;
 }
 
-/* ===== Контент ===== */
-.content {
+.stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* =============================== MVP CARD ================================= */
+
+.mvp-card {
   display: flex;
-  flex-direction: column;
-  gap: 25px;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 28px;
+  border-radius: var(--radius);
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.15),
+    rgba(251, 191, 36, 0.05)
+  );
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  margin-bottom: 24px;
+  transition: var(--transition);
 }
 
-/* ===== Карточки ===== */
+.mvp-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(245, 158, 11, 0.1);
+}
+
+.mvp-crown {
+  font-size: 48px;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(245, 158, 11, 0.15);
+  border-radius: var(--radius-sm);
+}
+
+.mvp-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.mvp-name {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.mvp-stat {
+  margin-left: auto;
+  text-align: center;
+  padding: 0 16px;
+}
+
+.mvp-stat span {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.mvp-stat strong {
+  font-size: 22px;
+  color: #fbbf24;
+}
+
+/* =============================== CARD ================================= */
+
 .card {
-  background: white;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
   overflow: hidden;
+  transition: var(--transition);
+}
+
+.card:hover {
+  border-color: var(--border-hover);
 }
 
 .card-header {
-  padding: 18px 25px;
-  background: #fafbfc;
-  border-bottom: 1px solid var(--light-gray);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
 }
 
 .card-header h2 {
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .card-actions {
@@ -327,10 +466,129 @@ body {
 }
 
 .card-body {
-  padding: 20px 25px;
+  padding: 20px 24px;
 }
 
-/* ===== Таблица ===== */
+/* =============================== TOP PLAYERS ================================= */
+
+.top-players {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.top-player-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+
+.top-player-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.top-player-rank {
+  font-size: 20px;
+  font-weight: 800;
+  width: 36px;
+  text-align: center;
+}
+.top-player-rank.gold {
+  color: #facc15;
+}
+.top-player-rank.silver {
+  color: #cbd5e1;
+}
+.top-player-rank.bronze {
+  color: #fb923c;
+}
+
+.top-player-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: white;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+
+.top-player-info {
+  flex: 1;
+}
+
+.top-player-name {
+  font-weight: 600;
+}
+
+.top-player-stats {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* =============================== PLAYERS LIST ================================= */
+
+.players-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.player-list-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+
+.player-list-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateX(4px);
+}
+
+.player-list-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.player-list-info {
+  flex: 1;
+}
+
+.player-list-name {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.player-list-stats {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* =============================== TABLE ================================= */
+
 .table-wrapper {
   overflow-x: auto;
 }
@@ -341,281 +599,220 @@ body {
 }
 
 .stats-table th {
-  background: #f8f9fa;
-  padding: 12px 10px;
-  text-align: left;
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: var(--gray);
+  padding: 12px 16px;
+  color: var(--text-secondary);
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 2px solid var(--light-gray);
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
 }
 
 .stats-table td {
-  padding: 12px 10px;
-  border-bottom: 1px solid #f5f6f8;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .stats-table tr:hover td {
-  background: #fafbfc;
+  background: rgba(255, 255, 255, 0.03);
 }
 
-.stats-table .rank {
-  font-weight: 700;
-  color: var(--gray);
+.rank {
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  display: inline-block;
 }
-
-.stats-table .rank-1 {
-  color: #f1c40f;
+.rank-1 {
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.12);
 }
-.stats-table .rank-2 {
-  color: #bdc3c7;
+.rank-2 {
+  color: #cbd5e1;
+  background: rgba(203, 213, 225, 0.08);
 }
-.stats-table .rank-3 {
-  color: #e67e22;
+.rank-3 {
+  color: #fb923c;
+  background: rgba(251, 146, 60, 0.12);
 }
 
 .empty-state {
   text-align: center;
-  color: var(--gray);
-  padding: 30px 0;
+  padding: 40px;
+  color: var(--text-secondary);
 }
 
-/* ===== Графики ===== */
-.charts-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 25px;
-}
-
-.chart-box {
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid var(--light-gray);
-}
-
-.chart-box h4 {
-  font-size: 0.95rem;
-  margin-bottom: 12px;
-  color: var(--dark);
-}
-
-.chart-full {
-  grid-column: 1 / -1;
-}
-
-.chart-box canvas {
-  max-height: 250px;
-  max-width: 100%;
-}
-
-/* ===== История ===== */
-.history-list {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.history-item {
-  padding: 10px 12px;
-  border-bottom: 1px solid #f5f6f8;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: var(--transition);
-}
-
-.history-item:hover {
-  background: #fafbfc;
-}
-
-.history-item .game-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.history-item .game-badge {
-  background: var(--light-gray);
-  padding: 2px 12px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.history-item .winner {
-  color: var(--success);
-  font-weight: 600;
-}
-
-.history-item .loser {
-  color: var(--danger);
-}
-
-.history-item .timestamp {
-  color: var(--gray);
-  font-size: 0.8rem;
-}
-
-/* ===== ML ===== */
-.ml-card {
-  border: 2px solid #f1c40f;
-}
-
-.ml-controls {
-  display: flex;
-  gap: 15px;
-  align-items: center;
-  margin-bottom: 15px;
-}
+/* =============================== FILTER SELECT ================================= */
 
 .filter-select {
-  padding: 8px 14px;
-  border: 1px solid var(--light-gray);
-  border-radius: 8px;
-  background: white;
-  font-size: 0.95rem;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
   min-width: 150px;
 }
 
-.ml-result {
-  background: #fef9e7;
-  padding: 15px 20px;
-  border-radius: 8px;
-  border-left: 4px solid #f1c40f;
+.filter-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.15);
 }
 
-.ml-result .prediction {
-  font-size: 1.1rem;
+.filter-select option {
+  background: var(--bg-secondary);
+  color: var(--text);
+  padding: 8px;
+}
+
+.filter-select option:hover {
+  background: var(--primary);
+}
+
+/* =============================== CHARTS ================================= */
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.chart-box {
+  padding: 20px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+}
+
+.chart-box h4 {
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
   font-weight: 600;
 }
 
-.ml-result .confidence {
-  color: var(--gray);
-  font-size: 0.9rem;
+.chart-box canvas {
+  max-height: 280px;
+  max-width: 100%;
 }
 
-/* ===== Модальные окна ===== */
+/* =============================== GAMES ================================= */
+
+.games-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.game-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+
+.game-stat-card:hover {
+  transform: translateX(6px);
+  border-color: var(--border-hover);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.game-stat-icon {
+  font-size: 40px;
+  width: 60px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.game-stat-info {
+  flex: 1;
+}
+
+.game-stat-name {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.game-stat-details {
+  margin-top: 6px;
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.game-stat-details span {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 14px;
+  border-radius: 20px;
+}
+
+/* =============================== SETTINGS ================================= */
+
+.settings-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.settings-group {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.settings-group h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: var(--text-secondary);
+}
+
+.settings-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.settings-actions .btn {
+  min-width: 160px;
+  justify-content: center;
+}
+
+.settings-hint {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* =============================== MODALS ================================= */
+
 .modal {
   display: none;
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
   justify-content: center;
   align-items: center;
-  animation: fadeIn 0.3s;
+  z-index: 1000;
 }
 
 .modal.active {
   display: flex;
+  animation: fadeIn 0.3s ease;
 }
 
-.modal-content {
-  background: white;
-  border-radius: var(--radius);
-  max-width: 500px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: slideIn 0.3s;
-}
-
-.modal-header {
-  padding: 18px 25px;
-  border-bottom: 1px solid var(--light-gray);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h2 {
-  font-size: 1.3rem;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 1.8rem;
-  cursor: pointer;
-  color: var(--gray);
-  transition: var(--transition);
-}
-
-.modal-close:hover {
-  color: var(--danger);
-  transform: rotate(90deg);
-}
-
-.modal-body {
-  padding: 25px;
-}
-
-.modal-footer {
-  padding: 15px 25px;
-  border-top: 1px solid var(--light-gray);
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.form-group {
-  margin-bottom: 18px;
-}
-
-.form-group label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 6px;
-  font-size: 0.9rem;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 10px 14px;
-  border: 1px solid var(--light-gray);
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: var(--transition);
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
-}
-
-/* ===== Бейджи ===== */
-.badge {
-  display: inline-block;
-  padding: 2px 12px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.badge-warning {
-  background: #fef9e7;
-  color: #7d6608;
-}
-
-.badge-success {
-  background: #eafaf1;
-  color: #1a7a42;
-}
-
-.badge-danger {
-  background: #fdedec;
-  color: #922b21;
-}
-
-/* ===== Анимации ===== */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -625,132 +822,315 @@ body {
   }
 }
 
-@keyframes slideIn {
+.modal-content {
+  width: 95%;
+  max-width: 480px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  animation: modalSlide 0.3s ease;
+}
+
+@keyframes modalSlide {
   from {
-    transform: translateY(-30px);
+    transform: translateY(-30px) scale(0.95);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
 
-/* ===== Адаптив ===== */
-@media (max-width: 1024px) {
-  .main-content {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
 }
 
-@media (max-width: 768px) {
-  .app-header {
-    flex-direction: column;
-    gap: 15px;
-    text-align: center;
-  }
-
-  .header-controls {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .sidebar {
-    grid-template-columns: 1fr;
-  }
-
-  .charts-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .chart-full {
-    grid-column: 1;
-  }
-
-  .stats-summary {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .modal-content {
-    width: 95%;
-    margin: 10px;
-  }
+.modal-header h2 {
+  font-size: 20px;
 }
 
-/* ===== Скроллбар ===== */
+.modal-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  font-size: 22px;
+  cursor: pointer;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  transform: rotate(90deg);
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* =============================== FORMS ================================= */
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 14px;
+  transition: var(--transition);
+  outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.15);
+}
+
+.form-group input::placeholder {
+  color: var(--text-muted);
+}
+
+.form-group select option {
+  background: var(--bg-secondary);
+  color: var(--text);
+}
+
+.result-inputs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.result-inputs input {
+  width: 80px;
+}
+
+/* =============================== SCROLLBAR ================================= */
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--light-gray);
-  border-radius: 3px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--gray);
-  border-radius: 3px;
+  background: var(--border);
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #7f8c8d;
+  background: var(--border-hover);
 }
 
-.games-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 15px;
-  padding: 10px 0;
+/* =============================== RESPONSIVE ================================= */
+
+@media (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .top-players {
+    grid-template-columns: 1fr;
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.game-stat-card {
+@media (max-width: 768px) {
+  .sidebar-nav {
+    transform: translateX(-100%);
+    width: 280px;
+  }
+
+  .sidebar-nav.open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 16px;
+  }
+
+  .btn-mobile-menu {
+    display: block;
+  }
+
+  .app-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .header-controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+  .mvp-card {
+    flex-wrap: wrap;
+  }
+
+  .mvp-stat {
+    margin-left: 0;
+  }
+
+  .games-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .players-list {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-actions {
+    flex-direction: column;
+  }
+
+  .settings-actions .btn {
+    min-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stat-card {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .stat-value {
+    font-size: 18px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+  }
+}
+
+/* =============================== USERS LIST ================================= */
+
+.users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-list-item {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 10px;
-  border-left: 4px solid #4a90e2;
-  transition: transform 0.2s;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  transition: var(--transition);
 }
 
-.game-stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.user-list-item:hover {
+  background: rgba(255, 255, 255, 0.06);
 }
 
-.game-stat-icon {
-  font-size: 32px;
-  width: 50px;
-  text-align: center;
-}
-
-.game-stat-info {
-  flex: 1;
-}
-
-.game-stat-name {
-  font-weight: bold;
-  font-size: 16px;
-  margin-bottom: 5px;
-}
-
-.game-stat-details {
+.user-list-info {
   display: flex;
-  gap: 15px;
-  font-size: 13px;
-  color: #666;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.game-stat-details span {
-  background: white;
-  padding: 2px 10px;
+.user-list-name {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.user-list-role {
+  font-size: 12px;
+  padding: 2px 12px;
   border-radius: 12px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.user-list-role.admin {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+}
+
+.user-list-role.user {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.12);
+}
+
+.user-list-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* =============================== Закрытие модалок по клику вне ================================= */
+
+.modal {
+  cursor: pointer;
+}
+
+.modal-content {
+  cursor: default;
 }

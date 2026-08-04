@@ -1,42 +1,60 @@
 // ============================================
-// DataManager - Управление данными с поддержкой игр
+// DataManager - Управление данными с поддержкой игр и логинов
 // ============================================
 
 const DEFAULT_DATA = {
   players: {},
 };
 
+const DEFAULT_LOGINS = {
+  admins: {},
+  users: {},
+};
+
 export class DataManager {
   constructor() {
     this.data = { players: {} };
+    this.logins = { admins: {}, users: {} };
     this.currentGameFilter = "all";
   }
 
   async loadData() {
     try {
-      const response = await fetch("/api/stats");
-
-      if (!response.ok) {
+      // Загружаем stats
+      const statsResponse = await fetch("/api/stats");
+      if (!statsResponse.ok) {
         throw new Error("Не удалось загрузить stats.json");
       }
-
-      const rawData = await response.json();
-
-      // Преобразуем старый формат в новый
+      const rawData = await statsResponse.json();
       this.data = this.migrateData(rawData);
-
       console.log("✅ Данные загружены:", this.data);
+
+      // Загружаем логины
+      try {
+        const loginResponse = await fetch("/api/logins");
+        if (loginResponse.ok) {
+          this.logins = await loginResponse.json();
+          console.log("✅ Логины загружены:", this.logins);
+        } else {
+          this.logins = JSON.parse(JSON.stringify(DEFAULT_LOGINS));
+        }
+      } catch (e) {
+        console.warn("⚠️ Не удалось загрузить логины");
+        this.logins = JSON.parse(JSON.stringify(DEFAULT_LOGINS));
+        // Не создаём автоматически, просто используем пустые
+      }
+
       return this.data;
     } catch (error) {
       console.error("Ошибка загрузки:", error);
       this.data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+      this.logins = JSON.parse(JSON.stringify(DEFAULT_LOGINS));
       return this.data;
     }
   }
 
   // Миграция данных из старого формата
   migrateData(data) {
-    // Если данные в старом формате (массив players)
     if (Array.isArray(data.players)) {
       const newPlayers = {};
       data.players.forEach((p) => {
@@ -49,7 +67,6 @@ export class DataManager {
       return { players: newPlayers };
     }
 
-    // Если уже в новом формате
     if (data.players && typeof data.players === "object") {
       return data;
     }
@@ -74,6 +91,99 @@ export class DataManager {
     }
   }
 
+  async saveLogins() {
+    try {
+      const response = await fetch("/api/logins", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(this.logins),
+      });
+
+      if (!response.ok) throw new Error("Ошибка сохранения логинов");
+      console.log("💾 Логины сохранены");
+      return true;
+    } catch (error) {
+      console.error("Ошибка сохранения логинов:", error);
+      return false;
+    }
+  }
+
+  // ===== АВТОРИЗАЦИЯ =====
+  checkLogin(login, password) {
+    // Проверяем админов
+    if (this.logins.admins && this.logins.admins[login] === password) {
+      return { success: true, role: "admin", login };
+    }
+    // Проверяем пользователей
+    if (this.logins.users && this.logins.users[login] === password) {
+      return { success: true, role: "user", login };
+    }
+    return { success: false };
+  }
+
+  async addUser(login, password, role = "user") {
+    login = login.trim();
+    if (!login || !password) return false;
+
+    // Проверяем, не существует ли уже такой логин
+    if (this.logins.admins[login] || this.logins.users[login]) {
+      return false;
+    }
+
+    if (role === "admin") {
+      this.logins.admins[login] = password;
+    } else {
+      this.logins.users[login] = password;
+    }
+
+    await this.saveLogins();
+    return true;
+  }
+
+  async deleteUser(login) {
+    if (login === "admin") {
+      alert("❌ Нельзя удалить главного администратора");
+      return false;
+    }
+
+    if (this.logins.admins[login]) {
+      delete this.logins.admins[login];
+    } else if (this.logins.users[login]) {
+      delete this.logins.users[login];
+    } else {
+      return false;
+    }
+
+    await this.saveLogins();
+    return true;
+  }
+
+  async changePassword(login, newPassword) {
+    if (!login || !newPassword || newPassword.length < 3) return false;
+
+    if (this.logins.admins[login]) {
+      this.logins.admins[login] = newPassword;
+    } else if (this.logins.users[login]) {
+      this.logins.users[login] = newPassword;
+    } else {
+      return false;
+    }
+
+    await this.saveLogins();
+    return true;
+  }
+
+  getUsers() {
+    const users = [];
+    Object.keys(this.logins.admins || {}).forEach((login) => {
+      users.push({ login, role: "admin" });
+    });
+    Object.keys(this.logins.users || {}).forEach((login) => {
+      users.push({ login, role: "user" });
+    });
+    return users;
+  }
+
   // ===== Получение игр =====
   getAvailableGames() {
     const games = new Set();
@@ -94,13 +204,11 @@ export class DataManager {
       let totalLosses = 0;
 
       if (gameFilter === "all") {
-        // Суммируем по всем играм
         Object.values(playerData.games || {}).forEach((gameStats) => {
           totalWins += gameStats.wins || 0;
           totalLosses += gameStats.losses || 0;
         });
       } else {
-        // Только конкретная игра
         const gameStats = playerData.games?.[gameFilter];
         if (gameStats) {
           totalWins = gameStats.wins || 0;
@@ -176,11 +284,16 @@ export class DataManager {
   }
 
   // ===== Добавление данных =====
-  async addPlayer(name) {
+  async addPlayer(name, game = null, wins = 0, losses = 0) {
     name = name.trim();
     if (!name || this.data.players[name]) return false;
 
     this.data.players[name] = { games: {} };
+
+    if (game && (wins > 0 || losses > 0)) {
+      this.data.players[name].games[game] = { wins, losses };
+    }
+
     await this.saveData();
     return true;
   }
@@ -189,16 +302,13 @@ export class DataManager {
     if (!game || !winner || !loser || winner === loser) return false;
     if (!this.data.players[winner] || !this.data.players[loser]) return false;
 
-    // Инициализируем игру у победителя
     if (!this.data.players[winner].games[game]) {
       this.data.players[winner].games[game] = { wins: 0, losses: 0 };
     }
-    // Инициализируем игру у проигравшего
     if (!this.data.players[loser].games[game]) {
       this.data.players[loser].games[game] = { wins: 0, losses: 0 };
     }
 
-    // Добавляем результат
     this.data.players[winner].games[game].wins++;
     this.data.players[loser].games[game].losses++;
 
@@ -237,14 +347,6 @@ export class DataManager {
     if (!player) return false;
 
     player.games = {};
-    await this.saveData();
-    return true;
-  }
-
-  async clearAllStats() {
-    Object.keys(this.data.players).forEach((name) => {
-      this.data.players[name].games = {};
-    });
     await this.saveData();
     return true;
   }
