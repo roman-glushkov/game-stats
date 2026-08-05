@@ -1367,3 +1367,66 @@ body {
   }
 }
 /*тестовый комит*/
+
+/* =============================== НАСТРОЙКИ ИГР ================================= */
+
+.games-settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.game-setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+
+.game-setting-item:hover {
+  border-color: var(--border-hover);
+}
+
+.game-setting-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.game-setting-select {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+  min-width: 180px;
+}
+
+.game-setting-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.15);
+}
+
+.game-setting-select option {
+  background: var(--bg-secondary);
+  color: var(--text);
+}
+
+@media (max-width: 600px) {
+  .game-setting-item {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .game-setting-select {
+    min-width: 100%;
+  }
+}

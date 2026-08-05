@@ -71,6 +71,7 @@ class App {
     this.renderTopLosers();
     this.renderPlayersList();
     this.renderUsersList();
+    this.renderGamesSettings();
     this.updateNavBadge();
     this.updateGameSelects();
     this.updatePlayerGameSelect();
@@ -217,6 +218,68 @@ class App {
       .join("");
   }
 
+  renderGamesSettings() {
+    const container = document.getElementById("gamesSettingsList");
+    if (!container) return;
+
+    // Проверяем, что пользователь авторизован и админ
+    const isAdmin = this.isLoggedIn && this.userRole === "admin";
+
+    const gamesSettingsBlock = document.getElementById("gamesSettings");
+    if (gamesSettingsBlock) {
+      gamesSettingsBlock.style.display = isAdmin ? "block" : "none";
+    }
+
+    if (!isAdmin) {
+      container.innerHTML =
+        '<div class="empty-state">Только для администратора</div>';
+      return;
+    }
+
+    const games = this.dataManager
+      .getAvailableGames()
+      .filter((g) => g !== "all" && g !== "Все игры");
+
+    if (!games || games.length === 0) {
+      container.innerHTML =
+        '<div class="empty-state">Нет игр для настройки</div>';
+      return;
+    }
+
+    let html = "";
+    games.forEach((game) => {
+      const currentSetting = this.dataManager.getGameSetting(game);
+
+      html += `
+      <div class="game-setting-item">
+        <span class="game-setting-name">${game}</span>
+        <select class="game-setting-select" data-game="${game}">
+          <option value="wins" ${
+            currentSetting === "wins" ? "selected" : ""
+          }>🏆 Только победы</option>
+          <option value="losses" ${
+            currentSetting === "losses" ? "selected" : ""
+          }>😵 Только поражения</option>
+          <option value="both" ${
+            currentSetting === "both" ? "selected" : ""
+          }>⚖️ Победы и поражения</option>
+        </select>
+      </div>
+    `;
+    });
+
+    container.innerHTML = html;
+
+    container.querySelectorAll(".game-setting-select").forEach((select) => {
+      select.addEventListener("change", async (e) => {
+        const game = e.target.dataset.game;
+        const value = e.target.value;
+        await this.dataManager.setGameSetting(game, value);
+        this.renderAll();
+      });
+    });
+  }
+
   updateNavBadge() {
     const count = this.dataManager.getPlayerNames().length;
     const badge = document.getElementById("navPlayersCount");
@@ -268,6 +331,7 @@ class App {
 
         if (section === "settings") {
           this.renderUsersList();
+          this.renderGamesSettings();
         }
       });
     });
@@ -426,6 +490,7 @@ class App {
     const logoutSettingsBtn = document.getElementById("logoutSettingsBtn");
     const userManagement = document.getElementById("userManagement");
     const addUserBtn = document.getElementById("addUserBtn");
+    const gamesSettings = document.getElementById("gamesSettings");
 
     if (this.isLoggedIn) {
       const roleText = this.userRole === "admin" ? "Админ" : "Пользователь";
@@ -444,6 +509,10 @@ class App {
         addUserBtn.style.display =
           this.userRole === "admin" ? "inline-flex" : "none";
       }
+      if (gamesSettings) {
+        gamesSettings.style.display =
+          this.userRole === "admin" ? "block" : "none";
+      }
     } else {
       if (status) status.textContent = "👤 Гость";
       if (settingsStatus)
@@ -452,7 +521,9 @@ class App {
       if (loginSettingsBtn) loginSettingsBtn.style.display = "inline-flex";
       if (logoutSettingsBtn) logoutSettingsBtn.style.display = "none";
       if (userManagement) userManagement.style.display = "none";
+      if (gamesSettings) gamesSettings.style.display = "none";
     }
+    this.renderGamesSettings();
   }
 
   // ===== Методы для кнопок =====

@@ -4,6 +4,7 @@
 
 const DEFAULT_DATA = {
   players: {},
+  gameSettings: {},
 };
 
 const DEFAULT_LOGINS = {
@@ -13,7 +14,7 @@ const DEFAULT_LOGINS = {
 
 export class DataManager {
   constructor() {
-    this.data = { players: {} };
+    this.data = { players: {}, gameSettings: {} };
     this.logins = { admins: {}, users: {} };
     this.currentGameFilter = "all";
   }
@@ -65,11 +66,11 @@ export class DataManager {
           },
         };
       });
-      return { players: newPlayers };
+      return { players: newPlayers, gameSettings: data.gameSettings || {} };
     }
 
     if (data.players && typeof data.players === "object") {
-      return data;
+      return { players: data.players, gameSettings: data.gameSettings || {} };
     }
 
     return JSON.parse(JSON.stringify(DEFAULT_DATA));
@@ -186,6 +187,33 @@ export class DataManager {
     const adminsCount = Object.keys(this.logins.admins || {}).length;
     const usersCount = Object.keys(this.logins.users || {}).length;
     return adminsCount + usersCount > 0;
+  }
+
+  // ===== НАСТРОЙКИ ИГР =====
+  getGameSettings() {
+    return this.data.gameSettings || {};
+  }
+
+  getGameSetting(game) {
+    const settings = this.getGameSettings();
+    return settings[game] || "both";
+  }
+
+  async setGameSetting(game, type) {
+    if (!this.data.gameSettings) {
+      this.data.gameSettings = {};
+    }
+    this.data.gameSettings[game] = type;
+    await this.saveData();
+    return true;
+  }
+
+  async deleteGameSetting(game) {
+    if (this.data.gameSettings) {
+      delete this.data.gameSettings[game];
+      await this.saveData();
+    }
+    return true;
   }
 
   // ===== Получение игр =====
