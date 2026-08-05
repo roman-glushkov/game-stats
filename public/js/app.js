@@ -20,6 +20,10 @@ class App {
 
   async init() {
     await this.dataManager.loadData();
+
+    // 🔐 Проверяем сохранённую сессию
+    this.checkSession();
+
     this.setupTheme();
     this.setupEventListeners();
     this.setupNavigation();
@@ -34,6 +38,44 @@ class App {
 
     window.app = this;
     console.log("🏆 GameStats Pro загружен!");
+  }
+
+  // ===== ПРОВЕРКА СОХРАНЁННОЙ СЕССИИ =====
+  checkSession() {
+    const sessionData = localStorage.getItem("gameStats_session");
+    if (!sessionData) return;
+
+    try {
+      const session = JSON.parse(sessionData);
+      const { login, role, timestamp } = session;
+
+      // Проверяем, что сессии не больше 7 дней
+      const daysSinceLogin = (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
+      if (daysSinceLogin > 7) {
+        localStorage.removeItem("gameStats_session");
+        console.log("⏰ Сессия истекла (7 дней)");
+        return;
+      }
+
+      // Проверяем, что пользователь с таким логином существует
+      const users = this.dataManager.getUsers();
+      const userExists = users.some((u) => u.login === login);
+
+      if (userExists) {
+        this.isLoggedIn = true;
+        this.currentUser = login;
+        this.userRole = role;
+        this.updateAuthUI();
+        console.log(`🔐 Автоматический вход: ${login} (${role})`);
+      } else {
+        // Пользователь был удалён — очищаем сессию
+        localStorage.removeItem("gameStats_session");
+        console.log("🗑️ Сессия очищена (пользователь не найден)");
+      }
+    } catch (e) {
+      console.warn("Ошибка проверки сессии:", e);
+      localStorage.removeItem("gameStats_session");
+    }
   }
 
   // ===== ТЕМА =====
@@ -222,7 +264,6 @@ class App {
     const container = document.getElementById("gamesSettingsList");
     if (!container) return;
 
-    // Проверяем, что пользователь авторизован и админ
     const isAdmin = this.isLoggedIn && this.userRole === "admin";
 
     const gamesSettingsBlock = document.getElementById("gamesSettings");
@@ -387,6 +428,17 @@ class App {
         this.isLoggedIn = true;
         this.currentUser = result.login;
         this.userRole = result.role;
+
+        // 💾 Сохраняем сессию
+        localStorage.setItem(
+          "gameStats_session",
+          JSON.stringify({
+            login: result.login,
+            role: result.role,
+            timestamp: Date.now(),
+          })
+        );
+
         this.updateAuthUI();
         this.closeModal("loginModal");
         alert(`✅ Добро пожаловать, ${result.login}! (${result.role})`);
@@ -400,6 +452,10 @@ class App {
         this.isLoggedIn = false;
         this.currentUser = null;
         this.userRole = null;
+
+        // 🗑️ Удаляем сессию
+        localStorage.removeItem("gameStats_session");
+
         this.updateAuthUI();
         alert("👋 Вы вышли из системы");
       }
@@ -792,6 +848,17 @@ class App {
             this.isLoggedIn = true;
             this.currentUser = loginResult.login;
             this.userRole = loginResult.role;
+
+            // 💾 Сохраняем сессию
+            localStorage.setItem(
+              "gameStats_session",
+              JSON.stringify({
+                login: loginResult.login,
+                role: loginResult.role,
+                timestamp: Date.now(),
+              })
+            );
+
             this.updateAuthUI();
             this.renderAll();
             alert(`✅ Добро пожаловать, ${login}!`);
