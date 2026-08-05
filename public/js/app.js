@@ -123,7 +123,35 @@ class App {
     const players = this.dataManager.getAllStats("all");
     const totalWins = players.reduce((sum, p) => sum + p.wins, 0);
     const totalLosses = players.reduce((sum, p) => sum + p.losses, 0);
-    const totalGames = totalWins + totalLosses;
+
+    // Правильный подсчёт общего количества матчей
+    let totalGames = 0;
+    const games = this.dataManager
+      .getAvailableGames()
+      .filter((g) => g !== "all" && g !== "Все игры");
+
+    games.forEach((game) => {
+      const gamePlayers = this.dataManager.getAllStats(game);
+      const gameSetting = this.dataManager.getGameSetting(game);
+
+      let wins = 0;
+      let losses = 0;
+      gamePlayers.forEach((p) => {
+        wins += p.wins;
+        losses += p.losses;
+      });
+
+      let gameTotal = 0;
+      if (gameSetting === "wins") {
+        gameTotal = wins;
+      } else if (gameSetting === "losses") {
+        gameTotal = losses;
+      } else {
+        gameTotal = Math.floor((wins + losses) / 2);
+      }
+
+      totalGames += gameTotal;
+    });
 
     document.getElementById("totalGames").textContent = totalGames;
     document.getElementById("totalPlayers").textContent = players.length;
