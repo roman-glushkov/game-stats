@@ -1,4 +1,4 @@
-import { DataManager } from "./data/data-manager.js";
+import { StorageManager } from "./storage/storage-manager.js";
 import { StatsRenderer } from "./renderers/stats-renderer.js";
 import { ChartManager } from "./charts/chart-manager.js";
 import { ArcadeManager } from "./arcade/arcade-manager.js";
@@ -10,13 +10,13 @@ import { ColorUtils } from "./utils/color-utils.js";
 
 class App {
   constructor() {
-    this.dataManager = new DataManager();
-    this.statsRenderer = new StatsRenderer(this.dataManager);
-    this.chartManager = new ChartManager(this.dataManager);
-    this.arcadeManager = new ArcadeManager(this.dataManager);
+    this.storageManager = new StorageManager();
+    this.statsRenderer = new StatsRenderer(this.storageManager);
+    this.chartManager = new ChartManager(this.storageManager);
+    this.arcadeManager = new ArcadeManager(this.storageManager);
     this.theme = new AppTheme();
     this.navigation = new AppNavigation();
-    this.auth = new AppAuth(this.dataManager);
+    this.auth = new AppAuth(this.storageManager);
     this.modals = new AppModals();
     this.colorUtils = new ColorUtils();
 
@@ -29,7 +29,7 @@ class App {
   }
 
   async init() {
-    await this.dataManager.loadData();
+    await this.storageManager.loadData();
 
     // Передаём ссылку на app в auth
     this.auth.setApp(this);
@@ -41,7 +41,7 @@ class App {
     this.auth.setup();
     this.renderAll();
 
-    if (!this.dataManager.hasUsers()) {
+    if (!this.storageManager.hasUsers()) {
       setTimeout(() => this.modals.open("firstAdminModal"), 500);
     }
 
@@ -67,17 +67,17 @@ class App {
   }
 
   renderDashboard() {
-    const players = this.dataManager.getAllStats("all");
+    const players = this.storageManager.getAllStats("all");
     const totalWins = players.reduce((sum, p) => sum + p.wins, 0);
 
     let totalGames = 0;
-    const games = this.dataManager
+    const games = this.storageManager
       .getAvailableGames()
       .filter((g) => g !== "all" && g !== "Все игры");
 
     games.forEach((game) => {
-      const gamePlayers = this.dataManager.getAllStats(game);
-      const gameSetting = this.dataManager.getGameSetting(game);
+      const gamePlayers = this.storageManager.getAllStats(game);
+      const gameSetting = this.storageManager.getGameSetting(game);
       let wins = 0,
         losses = 0;
       gamePlayers.forEach((p) => {
@@ -118,7 +118,7 @@ class App {
   }
 
   renderTopLosers() {
-    const players = this.dataManager.getAllStats("all");
+    const players = this.storageManager.getAllStats("all");
     const sorted = [...players].sort((a, b) => b.losses - a.losses).slice(0, 3);
     const container = document.getElementById("topLosers");
     if (!container) return;
@@ -154,7 +154,7 @@ class App {
   }
 
   renderPlayersList() {
-    const players = this.dataManager.getPlayerNames();
+    const players = this.storageManager.getPlayerNames();
     const container = document.getElementById("playersList");
     document.getElementById("playersCount").textContent =
       players.length + " игроков";
@@ -166,7 +166,7 @@ class App {
 
     container.innerHTML = players
       .map((name) => {
-        const stats = this.dataManager.getPlayerStats(name, "all");
+        const stats = this.storageManager.getPlayerStats(name, "all");
         return `
         <div class="player-list-item">
           <div class="player-list-avatar" style="background: ${this.colorUtils.get(
@@ -190,7 +190,7 @@ class App {
     const container = document.getElementById("usersList");
     if (!container) return;
 
-    const users = this.dataManager.getUsers();
+    const users = this.storageManager.getUsers();
     if (users.length === 0) {
       container.innerHTML = '<div class="empty-state">Нет пользователей</div>';
       return;
@@ -237,7 +237,7 @@ class App {
       return;
     }
 
-    const games = this.dataManager
+    const games = this.storageManager
       .getAvailableGames()
       .filter((g) => g !== "all" && g !== "Все игры");
 
@@ -249,7 +249,7 @@ class App {
 
     let html = "";
     games.forEach((game) => {
-      const currentSetting = this.dataManager.getGameSetting(game);
+      const currentSetting = this.storageManager.getGameSetting(game);
       html += `
         <div class="game-setting-item">
           <span class="game-setting-name">${game}</span>
@@ -273,20 +273,20 @@ class App {
       select.addEventListener("change", async (e) => {
         const game = e.target.dataset.game;
         const value = e.target.value;
-        await this.dataManager.setGameSetting(game, value);
+        await this.storageManager.setGameSetting(game, value);
         this.renderAll();
       });
     });
   }
 
   updateNavBadge() {
-    const count = this.dataManager.getPlayerNames().length;
+    const count = this.storageManager.getPlayerNames().length;
     const badge = document.getElementById("navPlayersCount");
     if (badge) badge.textContent = count;
   }
 
   updateGameSelects() {
-    const players = this.dataManager.getPlayerNames();
+    const players = this.storageManager.getPlayerNames();
     const winnerSelect = document.getElementById("winnerSelect");
     const loserSelect = document.getElementById("loserSelect");
 
@@ -311,7 +311,7 @@ class App {
     const select = document.getElementById("playerGameSelect");
     if (!select) return;
 
-    const games = this.dataManager
+    const games = this.storageManager
       .getAvailableGames()
       .filter((g) => g !== "all");
     select.innerHTML = '<option value="">-- без статистики --</option>';
@@ -370,7 +370,7 @@ class App {
       alert("⚠️ Для редактирования необходимо войти");
       return;
     }
-    if (this.dataManager.addWin(name, game)) {
+    if (this.storageManager.addWin(name, game)) {
       this.renderAll();
     } else {
       alert(`Ошибка: игрок "${name}" не найден`);
@@ -382,7 +382,7 @@ class App {
       alert("⚠️ Для редактирования необходимо войти");
       return;
     }
-    if (this.dataManager.addLoss(name, game)) {
+    if (this.storageManager.addLoss(name, game)) {
       this.renderAll();
     } else {
       alert(`Ошибка: игрок "${name}" не найден`);
@@ -441,7 +441,7 @@ class App {
         alert("Введите имя игрока");
         return;
       }
-      if (this.dataManager.data.players[name]) {
+      if (this.storageManager.data.players[name]) {
         alert("Игрок уже существует");
         return;
       }
@@ -452,7 +452,7 @@ class App {
       const losses =
         parseInt(document.getElementById("playerLossesInput")?.value) || 0;
 
-      if (this.dataManager.addPlayer(name, game, wins, losses)) {
+      if (this.storageManager.addPlayer(name, game, wins, losses)) {
         this.renderAll();
         this.modals.close("addPlayerModal");
         if (input) input.value = "";
@@ -484,7 +484,7 @@ class App {
         return;
       }
 
-      if (this.dataManager.addGameResult(game, winner, loser)) {
+      if (this.storageManager.addGameResult(game, winner, loser)) {
         this.renderAll();
         this.modals.close("addGameModal");
         const winnerSelect = document.getElementById("winnerSelect");
@@ -508,7 +508,7 @@ class App {
 
     // Экспорт/Импорт
     document.getElementById("exportDataBtn")?.addEventListener("click", () => {
-      const data = this.dataManager.exportData();
+      const data = this.storageManager.exportData();
       const blob = new Blob([data], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -534,7 +534,7 @@ class App {
         const reader = new FileReader();
         reader.onload = (event) => {
           const content = event.target.result;
-          if (this.dataManager.importData(content)) {
+          if (this.storageManager.importData(content)) {
             this.renderAll();
             alert("✅ Данные успешно импортированы");
           } else {

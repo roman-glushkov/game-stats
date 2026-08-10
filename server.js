@@ -321,7 +321,6 @@ const server = http.createServer((req, res) => {
   const cleanPath = requestPath.split("?")[0];
 
   // Формируем путь к файлу в папке public
-  // Убираем ведущий слеш и добавляем public
   const relativePath = cleanPath.replace(/^\/+/, "");
   let filePath = path.join(PUBLIC_DIR, relativePath);
 
@@ -386,11 +385,11 @@ const checkFile = (filePath) => {
 
 checkFile(path.join(PUBLIC_DIR, "index.html"));
 checkFile(path.join(PUBLIC_DIR, "js", "app.js"));
-checkFile(path.join(PUBLIC_DIR, "js", "data", "data-manager.js"));
-checkFile(path.join(PUBLIC_DIR, "js", "data", "data-auth.js"));
-checkFile(path.join(PUBLIC_DIR, "js", "data", "data-stats.js"));
-checkFile(path.join(PUBLIC_DIR, "js", "data", "data-games.js"));
-checkFile(path.join(PUBLIC_DIR, "js", "data", "data-arcade.js"));
+checkFile(path.join(PUBLIC_DIR, "js", "storage", "storage-manager.js"));
+checkFile(path.join(PUBLIC_DIR, "js", "storage", "storage-auth.js"));
+checkFile(path.join(PUBLIC_DIR, "js", "storage", "storage-stats.js"));
+checkFile(path.join(PUBLIC_DIR, "js", "storage", "storage-games.js"));
+checkFile(path.join(PUBLIC_DIR, "js", "storage", "storage-arcade.js"));
 checkFile(path.join(PUBLIC_DIR, "css", "style.css"));
 
 // Выводим информацию о игроках и админах
