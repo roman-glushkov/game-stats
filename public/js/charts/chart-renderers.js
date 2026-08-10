@@ -1,17 +1,7 @@
-// ============================================
-// ChartManager - Управление графиками с фильтром
-// ============================================
-
-export class ChartManager {
-  constructor(dataManager) {
+export class ChartRenderers {
+  constructor(dataManager, manager) {
     this.dataManager = dataManager;
-    this.charts = { bar: null, pie: null };
-  }
-
-  renderAll() {
-    const filter = this.currentFilter || "all";
-    this.renderBarChart(filter);
-    this.renderPieChart(filter);
+    this.manager = manager;
   }
 
   renderBarChart(filter = "all") {
@@ -21,12 +11,12 @@ export class ChartManager {
 
     const ctx = canvas.getContext("2d");
 
-    if (this.charts.bar) {
-      this.charts.bar.destroy();
+    if (this.manager.charts.bar) {
+      this.manager.charts.bar.destroy();
     }
 
     if (!players || players.length === 0) {
-      this.charts.bar = new Chart(ctx, {
+      this.manager.charts.bar = new Chart(ctx, {
         type: "bar",
         data: {
           labels: ["Нет данных"],
@@ -47,7 +37,7 @@ export class ChartManager {
     const wins = players.map((p) => p.wins);
     const losses = players.map((p) => p.losses);
 
-    this.charts.bar = new Chart(ctx, {
+    this.manager.charts.bar = new Chart(ctx, {
       type: "bar",
       data: {
         labels,
@@ -97,12 +87,12 @@ export class ChartManager {
 
     const ctx = canvas.getContext("2d");
 
-    if (this.charts.pie) {
-      this.charts.pie.destroy();
+    if (this.manager.charts.pie) {
+      this.manager.charts.pie.destroy();
     }
 
     if (!players || players.length === 0) {
-      this.charts.pie = new Chart(ctx, {
+      this.manager.charts.pie = new Chart(ctx, {
         type: "pie",
         data: {
           labels: ["Нет данных"],
@@ -124,7 +114,7 @@ export class ChartManager {
       "#ec4899",
     ];
 
-    this.charts.pie = new Chart(ctx, {
+    this.manager.charts.pie = new Chart(ctx, {
       type: "pie",
       data: {
         labels: players.map((p) => p.name),
@@ -155,12 +145,5 @@ export class ChartManager {
         },
       },
     });
-  }
-
-  destroyAll() {
-    Object.values(this.charts).forEach((chart) => {
-      if (chart) chart.destroy();
-    });
-    this.charts = { bar: null, pie: null };
   }
 }

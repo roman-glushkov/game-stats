@@ -1,10 +1,7 @@
-// ============================================
-// Аркада: Память (Memory) — игра против бота
-// ============================================
-
 export class ArcadeMemory {
   constructor(container) {
     this.container = container;
+    this.manager = null;
     this.colors = [
       "#FF0000",
       "#00FF00",
@@ -34,14 +31,12 @@ export class ArcadeMemory {
   }
 
   init() {
-    // Создаём колоду
     const deck = [];
     this.colors.forEach((color, i) => {
       deck.push({ id: i, color, matched: false, flipped: false });
       deck.push({ id: i, color, matched: false, flipped: false });
     });
 
-    // Перемешиваем
     for (let i = deck.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -57,8 +52,6 @@ export class ArcadeMemory {
     this.isLocked = false;
     this.playerScore = 0;
     this.botScore = 0;
-
-    // Случайный выбор кто ходит первый
     this.isPlayerTurn = Math.random() < 0.5;
 
     if (this.timerInterval) clearInterval(this.timerInterval);
@@ -96,7 +89,7 @@ export class ArcadeMemory {
             🤖 Бот: ${this.botScore}
           </span>
         </div>
-        <button class="btn btn-secondary btn-sm" onclick="window.app.closeArcade()">✕ Закрыть</button>
+        <button class="btn btn-secondary btn-sm" onclick="window.app.arcadeManager.closeGame()">✕ Закрыть</button>
       </div>
       <div style="text-align: center; padding: 10px; margin: 10px 0; font-size: 18px; font-weight: 600; border-radius: 10px; background: var(--bg-card); border: 2px solid ${turnColor};">
         <span style="color: ${turnColor};">${turnText}</span>
@@ -111,7 +104,7 @@ export class ArcadeMemory {
                  !card.flipped &&
                  this.isPlayerTurn &&
                  !this.isLocked
-                   ? `window.app.arcadeClick(${index})`
+                   ? `window.app.arcadeManager.click(${index})`
                    : ""
                }"
                style="${
@@ -138,7 +131,6 @@ export class ArcadeMemory {
     `;
   }
 
-  // ===== КЛИК ИГРОКА =====
   click(index) {
     if (!this.isRunning) return;
     if (!this.isPlayerTurn) return;
@@ -146,7 +138,6 @@ export class ArcadeMemory {
 
     const card = this.cards[index];
     if (card.matched || card.flipped) return;
-
     if (this.firstIndex === index) return;
 
     card.flipped = true;
@@ -158,14 +149,10 @@ export class ArcadeMemory {
     } else {
       this.secondIndex = index;
       this.isLocked = true;
-
-      setTimeout(() => {
-        this.checkPlayerMatch();
-      }, 600);
+      setTimeout(() => this.checkPlayerMatch(), 600);
     }
   }
 
-  // ===== ПРОВЕРКА ИГРОКА =====
   checkPlayerMatch() {
     const card1 = this.cards[this.firstIndex];
     const card2 = this.cards[this.secondIndex];
@@ -190,20 +177,16 @@ export class ArcadeMemory {
       setTimeout(() => {
         card1.flipped = false;
         card2.flipped = false;
-
         this.firstIndex = null;
         this.secondIndex = null;
         this.isLocked = false;
-
         this.isPlayerTurn = false;
         this.render();
-
         setTimeout(() => this.botMove(), 500);
       }, 300);
     }
   }
 
-  // ===== ХОД БОТА =====
   botMove() {
     if (!this.isRunning) return;
     if (this.isPlayerTurn) return;
@@ -211,9 +194,7 @@ export class ArcadeMemory {
 
     const available = [];
     this.cards.forEach((card, index) => {
-      if (!card.matched && !card.flipped) {
-        available.push(index);
-      }
+      if (!card.matched && !card.flipped) available.push(index);
     });
 
     if (available.length < 2) {
@@ -244,7 +225,6 @@ export class ArcadeMemory {
     }
 
     this.isLocked = true;
-
     this.cards[idx1].flipped = true;
     this.moves++;
     this.render();
@@ -263,24 +243,19 @@ export class ArcadeMemory {
           card2.matched = true;
           this.matchedPairs++;
           this.botScore++;
-
           this.isLocked = false;
-
           this.render();
 
           if (this.matchedPairs === this.totalPairs) {
             this.gameOver();
             return;
           }
-
           setTimeout(() => this.botMove(), 500);
         } else {
           setTimeout(() => {
             card1.flipped = false;
             card2.flipped = false;
-
             this.isLocked = false;
-
             this.isPlayerTurn = true;
             this.render();
           }, 300);
@@ -289,14 +264,12 @@ export class ArcadeMemory {
     }, 400);
   }
 
-  // ===== КОНЕЦ ИГРЫ =====
   gameOver() {
     this.isRunning = false;
     clearInterval(this.timerInterval);
 
-    let message = "";
-    let emoji = "";
-
+    let message = "",
+      emoji = "";
     if (this.playerScore > this.botScore) {
       message = "Вы победили! 🎉🏆";
       emoji = "🎉";
@@ -308,46 +281,38 @@ export class ArcadeMemory {
       emoji = "🤝";
     }
 
-    // Очки = количество найденных пар (без умножения на 10)
     const playerScore = this.playerScore;
 
     this.container.innerHTML = `
-    <div class="arcade-game-over">
-      <div class="arcade-game-over-content">
-        <h2>${emoji} ${message}</h2>
-        <div class="arcade-game-over-stats">
-          <div class="stat">
-            <span class="label">👤 Вы</span>
-            <span class="value">${this.playerScore}</span>
+      <div class="arcade-game-over">
+        <div class="arcade-game-over-content">
+          <h2>${emoji} ${message}</h2>
+          <div class="arcade-game-over-stats">
+            <div class="stat"><span class="label">👤 Вы</span><span class="value">${this.playerScore}</span></div>
+            <div class="stat"><span class="label">🤖 Бот</span><span class="value">${this.botScore}</span></div>
+            <div class="stat"><span class="label">🔄 Ходов</span><span class="value">${this.moves}</span></div>
+            <div class="stat"><span class="label">⏱️ Время</span><span class="value">${this.timer}с</span></div>
+            <div class="stat highlight" style="grid-column: span 2;">
+              <span class="label">⭐ Заработано очков</span>
+              <span class="value">${playerScore}</span>
+            </div>
           </div>
-          <div class="stat">
-            <span class="label">🤖 Бот</span>
-            <span class="value">${this.botScore}</span>
+          <div class="arcade-game-over-actions">
+            <button class="btn btn-primary" onclick="window.app.arcadeManager.startGame('memory')">🔄 Сыграть ещё</button>
+            <button class="btn btn-secondary" onclick="window.app.arcadeManager.closeGame()">🏠 В меню</button>
           </div>
-          <div class="stat">
-            <span class="label">🔄 Ходов</span>
-            <span class="value">${this.moves}</span>
-          </div>
-          <div class="stat">
-            <span class="label">⏱️ Время</span>
-            <span class="value">${this.timer}с</span>
-          </div>
-          <div class="stat highlight" style="grid-column: span 2;">
-            <span class="label">⭐ Заработано очков</span>
-            <span class="value">${playerScore}</span>
-          </div>
-        </div>
-        <div class="arcade-game-over-actions">
-          <button class="btn btn-primary" onclick="window.app.startArcadeGame('memory')">🔄 Сыграть ещё</button>
-          <button class="btn btn-secondary" onclick="window.app.closeArcade()">🏠 В меню</button>
         </div>
       </div>
-    </div>
-  `;
+    `;
 
-    // Сохраняем рекорд
     setTimeout(() => {
-      window.app.saveArcadeScore("memory", playerScore);
+      if (this.manager) {
+        this.manager.saveScore("memory", playerScore);
+      } else {
+        const player = window.app?.currentUser || "Гость";
+        window.app?.dataManager?.saveArcadeScore("memory", playerScore, player);
+        window.app?.arcadeManager?.renderLeaderboard();
+      }
     }, 500);
   }
 }
