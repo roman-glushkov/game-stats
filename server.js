@@ -305,6 +305,13 @@ const server = http.createServer((req, res) => {
   }
 
   // ===== STATIC FILES =====
+  // Обрабатываем только GET запросы для статики
+  if (req.method !== "GET") {
+    res.writeHead(405);
+    res.end();
+    return;
+  }
+
   let requestPath = req.url;
   if (requestPath === "/") {
     requestPath = "/index.html";
@@ -316,13 +323,40 @@ const server = http.createServer((req, res) => {
   // Формируем путь к файлу в папке public
   // Убираем ведущий слеш и добавляем public
   const relativePath = cleanPath.replace(/^\/+/, "");
-  const filePath = path.join(PUBLIC_DIR, relativePath);
+  let filePath = path.join(PUBLIC_DIR, relativePath);
 
-  console.log(`📂 Запрос: ${cleanPath} → ${filePath}`);
+  // Проверяем, существует ли файл
+  fs.stat(filePath, (statErr) => {
+    if (statErr) {
+      // Если файл не найден, пробуем найти с .html расширением
+      if (!path.extname(filePath) && !filePath.endsWith("/")) {
+        const htmlPath = filePath + ".html";
+        fs.stat(htmlPath, (htmlErr) => {
+          if (!htmlErr) {
+            filePath = htmlPath;
+            serveFile(filePath, res);
+          } else {
+            console.error(`❌ Файл не найден: ${filePath}`);
+            res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+            res.end("File not found");
+          }
+        });
+      } else {
+        console.error(`❌ Файл не найден: ${filePath}`);
+        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end("File not found");
+      }
+      return;
+    }
 
+    serveFile(filePath, res);
+  });
+});
+
+function serveFile(filePath, res) {
   fs.readFile(filePath, (err, content) => {
     if (err) {
-      console.error(`❌ Файл не найден: ${filePath}`);
+      console.error(`❌ Ошибка чтения файла: ${filePath}`);
       res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
       res.end("File not found");
       return;
@@ -331,10 +365,11 @@ const server = http.createServer((req, res) => {
     const ext = path.extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] || "application/octet-stream";
 
+    console.log(`✅ Отдаём файл: ${filePath} (${contentType})`);
     res.writeHead(200, { "Content-Type": contentType });
     res.end(content);
   });
-});
+}
 
 // ===== ЗАПУСК =====
 console.log("🔍 Проверка файлов:");
@@ -343,28 +378,20 @@ console.log(`📁 logins.json: ${fs.existsSync(loginsPath) ? "✅" : "❌"}`);
 
 // Проверяем структуру public
 console.log("🔍 Проверка структуры public:");
-console.log(
-  `📁 public/index.html: ${
-    fs.existsSync(path.join(PUBLIC_DIR, "index.html")) ? "✅" : "❌"
-  }`
-);
-console.log(
-  `📁 public/js/app.js: ${
-    fs.existsSync(path.join(PUBLIC_DIR, "js", "app.js")) ? "✅" : "❌"
-  }`
-);
-console.log(
-  `📁 public/js/data/data-manager.js: ${
-    fs.existsSync(path.join(PUBLIC_DIR, "js", "data", "data-manager.js"))
-      ? "✅"
-      : "❌"
-  }`
-);
-console.log(
-  `📁 public/css/style.css: ${
-    fs.existsSync(path.join(PUBLIC_DIR, "css", "style.css")) ? "✅" : "❌"
-  }`
-);
+const checkFile = (filePath) => {
+  const exists = fs.existsSync(filePath);
+  console.log(`📁 ${filePath}: ${exists ? "✅" : "❌"}`);
+  return exists;
+};
+
+checkFile(path.join(PUBLIC_DIR, "index.html"));
+checkFile(path.join(PUBLIC_DIR, "js", "app.js"));
+checkFile(path.join(PUBLIC_DIR, "js", "data", "data-manager.js"));
+checkFile(path.join(PUBLIC_DIR, "js", "data", "data-auth.js"));
+checkFile(path.join(PUBLIC_DIR, "js", "data", "data-stats.js"));
+checkFile(path.join(PUBLIC_DIR, "js", "data", "data-games.js"));
+checkFile(path.join(PUBLIC_DIR, "js", "data", "data-arcade.js"));
+checkFile(path.join(PUBLIC_DIR, "css", "style.css"));
 
 // Выводим информацию о игроках и админах
 try {
