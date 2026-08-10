@@ -3,12 +3,12 @@ import { StatsGames } from "./stats-games.js";
 import { StatsFilter } from "./stats-filter.js";
 
 export class StatsRenderer {
-  constructor(dataManager) {
-    this.dataManager = dataManager;
+  constructor(storageManager) {
+    this.storageManager = storageManager;
     this.currentFilter = "all";
-    this.table = new StatsTable(dataManager, this);
-    this.games = new StatsGames(dataManager);
-    this.filter = new StatsFilter(dataManager, this);
+    this.table = new StatsTable(storageManager, this);
+    this.games = new StatsGames(storageManager);
+    this.filter = new StatsFilter(storageManager, this);
   }
 
   renderAll() {
