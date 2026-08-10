@@ -2,9 +2,9 @@ import { ArcadeMemory } from "./arcade-memory.js";
 import { ArcadeLeaderboard } from "./arcade-leaderboard.js";
 
 export class ArcadeManager {
-  constructor(dataManager) {
-    this.dataManager = dataManager;
-    this.leaderboard = new ArcadeLeaderboard(dataManager);
+  constructor(storageManager) {
+    this.storageManager = storageManager;
+    this.leaderboard = new ArcadeLeaderboard(storageManager);
     this.arcadeGame = null;
     this.arcadeActive = false;
   }
@@ -13,6 +13,8 @@ export class ArcadeManager {
     const container = document.getElementById("arcadeGrid");
     if (!container) return;
 
+    const isLoggedIn = window.app?.isLoggedIn || false;
+
     const games = [
       {
         id: "memory",
@@ -20,6 +22,7 @@ export class ArcadeManager {
         description: "Найди пары одинаковых карточек против бота",
         players: 1,
         icon: "🧠",
+        requiresAuth: true,
       },
       {
         id: "coming_soon",
@@ -27,40 +30,52 @@ export class ArcadeManager {
         description: "Новые игры в разработке",
         players: 0,
         icon: "🔜",
+        requiresAuth: false,
       },
     ];
 
     container.innerHTML = games
-      .map(
-        (game) => `
-      <div class="arcade-card" onclick="${
-        game.id !== "coming_soon"
-          ? `window.app.arcadeManager.startGame('${game.id}')`
-          : ""
-      }" 
-           style="${
-             game.id === "coming_soon"
-               ? "opacity: 0.6; cursor: not-allowed;"
-               : ""
-           }">
-        <div class="arcade-icon">${game.icon}</div>
-        <div class="arcade-info">
-          <div class="arcade-name">${game.name}</div>
-          <div class="arcade-desc">${game.description}</div>
-          ${
-            game.players > 0
-              ? `<div class="arcade-players">👤 ${game.players} игрок</div>`
-              : ""
-          }
-        </div>
-        ${
-          game.id !== "coming_soon"
-            ? `<button class="btn btn-primary btn-sm">Играть</button>`
-            : `<span style="color: var(--text-muted); font-size: 12px;">Скоро</span>`
+      .map((game) => {
+        const isAvailable = game.id !== "coming_soon";
+        const canPlay = isAvailable && (!game.requiresAuth || isLoggedIn);
+
+        let clickHandler = "";
+        let buttonHtml = "";
+        let style = "";
+
+        if (game.id === "coming_soon") {
+          style = "opacity: 0.6; cursor: not-allowed;";
+          buttonHtml = `<span style="color: var(--text-muted); font-size: 12px;">Скоро</span>`;
+        } else if (!isLoggedIn && game.requiresAuth) {
+          style = "opacity: 0.7;";
+          clickHandler = `onclick="alert('⚠️ Для игры в аркады необходимо войти в систему')"`;
+          buttonHtml = `<button class="btn btn-primary btn-sm" style="opacity: 0.5;">🔒 Войти</button>`;
+        } else {
+          clickHandler = `onclick="window.app.arcadeManager.startGame('${game.id}')"`;
+          buttonHtml = `<button class="btn btn-primary btn-sm">Играть</button>`;
         }
-      </div>
-    `
-      )
+
+        return `
+          <div class="arcade-card" ${clickHandler} style="${style}">
+            <div class="arcade-icon">${game.icon}</div>
+            <div class="arcade-info">
+              <div class="arcade-name">${game.name}</div>
+              <div class="arcade-desc">${game.description}</div>
+              ${
+                game.players > 0
+                  ? `<div class="arcade-players">👤 ${game.players} игрок</div>`
+                  : ""
+              }
+              ${
+                game.requiresAuth && !isLoggedIn
+                  ? `<div style="color: var(--text-muted); font-size: 11px; margin-top: 4px;">🔒 Требуется вход</div>`
+                  : ""
+              }
+            </div>
+            ${buttonHtml}
+          </div>
+        `;
+      })
       .join("");
   }
 
@@ -69,6 +84,12 @@ export class ArcadeManager {
   }
 
   startGame(gameId) {
+    // Проверка авторизации перед запуском игры
+    if (!window.app?.isLoggedIn) {
+      alert("⚠️ Для игры в аркады необходимо войти в систему");
+      return;
+    }
+
     if (this.arcadeActive) return;
 
     this.arcadeActive = true;
@@ -111,7 +132,7 @@ export class ArcadeManager {
 
   saveScore(gameId, score) {
     const player = window.app?.currentUser || "Гость";
-    this.dataManager.saveArcadeScore(gameId, score, player);
+    this.storageManager.saveArcadeScore(gameId, score, player);
     this.renderLeaderboard();
   }
 }
