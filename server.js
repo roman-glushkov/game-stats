@@ -5,11 +5,15 @@ const path = require("path");
 
 const PORT = process.env.PORT || 3000;
 
+// ===== ОПРЕДЕЛЯЕМ КОРНЕВУЮ ПАПКУ =====
+const ROOT_DIR = __dirname;
+console.log(`📁 Корневая папка: ${ROOT_DIR}`);
+
 // ===== ОПРЕДЕЛЯЕМ ПАПКУ ДЛЯ ДАННЫХ =====
 const isRailway =
   process.env.RAILWAY_ENVIRONMENT === "production" ||
   process.env.RAILWAY_SERVICE_ID;
-const DATA_DIR = isRailway ? "/app/data" : path.join(__dirname, "data");
+const DATA_DIR = isRailway ? "/app/data" : path.join(ROOT_DIR, "data");
 
 console.log(`📁 Папка данных: ${DATA_DIR}`);
 
@@ -153,7 +157,14 @@ function checkAndRestoreIfEmpty() {
 checkAndRestoreIfEmpty();
 
 // ===== ПУБЛИЧНАЯ ПАПКА =====
-const PUBLIC_DIR = path.join(__dirname, "public");
+const PUBLIC_DIR = path.join(ROOT_DIR, "public");
+console.log(`📁 Public папка: ${PUBLIC_DIR}`);
+
+// Проверяем существование public папки
+if (!fs.existsSync(PUBLIC_DIR)) {
+  console.error(`❌ Папка public не найдена: ${PUBLIC_DIR}`);
+  process.exit(1);
+}
 
 // ===== MIME TYPES =====
 const MIME_TYPES = {
@@ -303,16 +314,9 @@ const server = http.createServer((req, res) => {
   const cleanPath = requestPath.split("?")[0];
 
   // Формируем путь к файлу в папке public
-  let filePath;
-
-  // Убираем ведущий слеш
+  // Убираем ведущий слеш и добавляем public
   const relativePath = cleanPath.replace(/^\/+/, "");
-
-  if (relativePath === "") {
-    filePath = path.join(PUBLIC_DIR, "index.html");
-  } else {
-    filePath = path.join(PUBLIC_DIR, relativePath);
-  }
+  const filePath = path.join(PUBLIC_DIR, relativePath);
 
   console.log(`📂 Запрос: ${cleanPath} → ${filePath}`);
 
@@ -336,6 +340,31 @@ const server = http.createServer((req, res) => {
 console.log("🔍 Проверка файлов:");
 console.log(`📁 stats.json: ${fs.existsSync(statsPath) ? "✅" : "❌"}`);
 console.log(`📁 logins.json: ${fs.existsSync(loginsPath) ? "✅" : "❌"}`);
+
+// Проверяем структуру public
+console.log("🔍 Проверка структуры public:");
+console.log(
+  `📁 public/index.html: ${
+    fs.existsSync(path.join(PUBLIC_DIR, "index.html")) ? "✅" : "❌"
+  }`
+);
+console.log(
+  `📁 public/js/app.js: ${
+    fs.existsSync(path.join(PUBLIC_DIR, "js", "app.js")) ? "✅" : "❌"
+  }`
+);
+console.log(
+  `📁 public/js/data/data-manager.js: ${
+    fs.existsSync(path.join(PUBLIC_DIR, "js", "data", "data-manager.js"))
+      ? "✅"
+      : "❌"
+  }`
+);
+console.log(
+  `📁 public/css/style.css: ${
+    fs.existsSync(path.join(PUBLIC_DIR, "css", "style.css")) ? "✅" : "❌"
+  }`
+);
 
 // Выводим информацию о игроках и админах
 try {
