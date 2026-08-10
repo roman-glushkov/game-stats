@@ -5,6 +5,7 @@
 import { DataManager } from "./dataManager.js";
 import { StatsRenderer } from "./statsRenderer.js";
 import { ChartManager } from "./chartManager.js";
+import { ArcadeMemory } from "./arcade-memory.js";
 
 class App {
   constructor() {
@@ -14,6 +15,8 @@ class App {
     this.isLoggedIn = false;
     this.currentUser = null;
     this.userRole = null;
+    this.arcadeGame = null;
+    this.arcadeActive = false;
 
     this.init();
   }
@@ -21,7 +24,7 @@ class App {
   async init() {
     await this.dataManager.loadData();
 
-    // 🔐 Проверяем сохранённую сессию
+    // Проверяем сохранённую сессию
     this.checkSession();
 
     this.setupTheme();
@@ -38,6 +41,11 @@ class App {
 
     window.app = this;
     console.log("🏆 GameStats Pro загружен!");
+
+    // Дополнительная проверка — принудительно обновляем рейтинг через 1 секунду
+    setTimeout(() => {
+      this.renderArcadeLeaderboard();
+    }, 1000);
   }
 
   // ===== ПРОВЕРКА СОХРАНЁННОЙ СЕССИИ =====
@@ -49,7 +57,6 @@ class App {
       const session = JSON.parse(sessionData);
       const { login, role, timestamp } = session;
 
-      // Проверяем, что сессии не больше 7 дней
       const daysSinceLogin = (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
       if (daysSinceLogin > 7) {
         localStorage.removeItem("gameStats_session");
@@ -57,7 +64,6 @@ class App {
         return;
       }
 
-      // Проверяем, что пользователь с таким логином существует
       const users = this.dataManager.getUsers();
       const userExists = users.some((u) => u.login === login);
 
@@ -68,7 +74,6 @@ class App {
         this.updateAuthUI();
         console.log(`🔐 Автоматический вход: ${login} (${role})`);
       } else {
-        // Пользователь был удалён — очищаем сессию
         localStorage.removeItem("gameStats_session");
         console.log("🗑️ Сессия очищена (пользователь не найден)");
       }
@@ -114,6 +119,8 @@ class App {
     this.renderPlayersList();
     this.renderUsersList();
     this.renderGamesSettings();
+    this.renderArcadeGames();
+    this.renderArcadeLeaderboard(); // <-- Здесь вызывается
     this.updateNavBadge();
     this.updateGameSelects();
     this.updatePlayerGameSelect();
@@ -349,6 +356,179 @@ class App {
     });
   }
 
+  // ===== АРКАДЫ =====
+  renderArcadeGames() {
+    const container = document.getElementById("arcadeGrid");
+    if (!container) return;
+
+    const games = [
+      {
+        id: "memory",
+        name: "🎴 Память",
+        description: "Найди пары одинаковых карточек против бота",
+        players: 1,
+        icon: "🧠",
+      },
+      {
+        id: "coming_soon",
+        name: "🚧 Скоро",
+        description: "Новые игры в разработке",
+        players: 0,
+        icon: "🔜",
+      },
+    ];
+
+    container.innerHTML = games
+      .map(
+        (game) => `
+      <div class="arcade-card" onclick="${
+        game.id !== "coming_soon"
+          ? `window.app.startArcadeGame('${game.id}')`
+          : ""
+      }" style="${
+          game.id === "coming_soon" ? "opacity: 0.6; cursor: not-allowed;" : ""
+        }">
+        <div class="arcade-icon">${game.icon}</div>
+        <div class="arcade-info">
+          <div class="arcade-name">${game.name}</div>
+          <div class="arcade-desc">${game.description}</div>
+          ${
+            game.players > 0
+              ? `<div class="arcade-players">👤 ${game.players} игрок</div>`
+              : ""
+          }
+        </div>
+        ${
+          game.id !== "coming_soon"
+            ? `<button class="btn btn-primary btn-sm">Играть</button>`
+            : `<span style="color: var(--text-muted); font-size: 12px;">Скоро</span>`
+        }
+      </div>
+    `
+      )
+      .join("");
+  }
+
+  renderArcadeLeaderboard() {
+    const container = document.getElementById("arcadeLeaderboardContent");
+    if (!container) {
+      console.warn("⚠️ arcadeLeaderboardContent не найден!");
+      return;
+    }
+
+    const arcade = this.dataManager.getArcadeData();
+    const gameId = "memory";
+    const records = this.dataManager.getArcadeLeaderboard(gameId);
+    const gamesPlayed = arcade[gameId]?.gamesPlayed || 0;
+
+    console.log("🎯 Рендеринг рейтинга аркад:", { records, gamesPlayed });
+
+    const bestScore =
+      records.length > 0
+        ? Math.max(...records.map((r) => r.bestScore || 0))
+        : 0;
+    const totalPlayers = records.length;
+
+    let html = `
+    <div class="arcade-leaderboard-stats">
+      <div class="stat-card-mini">
+        <div class="stat-label">🎮 Сыграно игр</div>
+        <div class="stat-value">${gamesPlayed}</div>
+      </div>
+      <div class="stat-card-mini">
+        <div class="stat-label">🏆 Лучший результат</div>
+        <div class="stat-value">${bestScore}</div>
+      </div>
+      <div class="stat-card-mini">
+        <div class="stat-label">👥 Игроков</div>
+        <div class="stat-value">${totalPlayers}</div>
+      </div>
+    </div>
+    <div class="arcade-records-list">
+      ${
+        records.length === 0
+          ? '<div class="empty-state">Нет рекордов</div>'
+          : ""
+      }
+      ${records
+        .map((record, i) => {
+          const rankClass =
+            i === 0 ? "rank-1" : i === 1 ? "rank-2" : i === 2 ? "rank-3" : "";
+          const medal =
+            i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`;
+          const avgScore =
+            record.winRate || record.totalScore / record.gamesPlayed;
+          return `
+          <div class="arcade-record-item">
+            <span class="arcade-record-rank ${rankClass}">${medal}</span>
+            <span class="arcade-record-player">${record.player}</span>
+            <span class="arcade-record-score">⭐ ${
+              record.totalScore || 0
+            }</span>
+            <span class="arcade-record-games">🎯 ${
+              record.gamesPlayed || 0
+            } игр</span>
+            <span class="arcade-record-games">📈 ${
+              typeof avgScore === "number" ? avgScore.toFixed(1) : "0.0"
+            }</span>
+            <span class="arcade-record-date">${record.date}</span>
+          </div>
+        `;
+        })
+        .join("")}
+    </div>
+  `;
+
+    container.innerHTML = html;
+    console.log("✅ Рейтинг аркад обновлён!");
+  }
+
+  startArcadeGame(gameId) {
+    if (this.arcadeActive) return;
+
+    this.arcadeActive = true;
+    const grid = document.getElementById("arcadeGrid");
+    const container = document.getElementById("arcadeGameContainer");
+
+    if (grid) grid.style.display = "none";
+    if (container) {
+      container.style.display = "block";
+      container.innerHTML = "";
+
+      if (gameId === "memory") {
+        this.arcadeGame = new ArcadeMemory(container);
+      }
+    }
+  }
+
+  closeArcade() {
+    this.arcadeActive = false;
+    this.arcadeGame = null;
+
+    const grid = document.getElementById("arcadeGrid");
+    const container = document.getElementById("arcadeGameContainer");
+
+    if (grid) grid.style.display = "grid";
+    if (container) {
+      container.style.display = "none";
+      container.innerHTML = "";
+    }
+
+    this.renderArcadeLeaderboard();
+  }
+
+  arcadeClick(index) {
+    if (this.arcadeGame && typeof this.arcadeGame.click === "function") {
+      this.arcadeGame.click(index);
+    }
+  }
+
+  saveArcadeScore(gameId, score) {
+    const player = this.currentUser || "Гость";
+    this.dataManager.saveArcadeScore(gameId, score, player);
+    this.renderArcadeLeaderboard();
+  }
+
   updateNavBadge() {
     const count = this.dataManager.getPlayerNames().length;
     const badge = document.getElementById("navPlayersCount");
@@ -363,6 +543,7 @@ class App {
       leaderboard: document.getElementById("section-leaderboard"),
       charts: document.getElementById("section-charts"),
       games: document.getElementById("section-games"),
+      arcade: document.getElementById("section-arcade"),
       settings: document.getElementById("section-settings"),
     };
     const titles = {
@@ -371,6 +552,7 @@ class App {
       leaderboard: "Таблица лидеров",
       charts: "Визуализация",
       games: "Игры",
+      arcade: "Аркады",
       settings: "Настройки",
     };
 
@@ -401,6 +583,11 @@ class App {
         if (section === "settings") {
           this.renderUsersList();
           this.renderGamesSettings();
+        }
+
+        if (section === "arcade") {
+          this.renderArcadeGames();
+          this.renderArcadeLeaderboard();
         }
       });
     });
@@ -457,7 +644,6 @@ class App {
         this.currentUser = result.login;
         this.userRole = result.role;
 
-        // 💾 Сохраняем сессию
         localStorage.setItem(
           "gameStats_session",
           JSON.stringify({
@@ -481,7 +667,6 @@ class App {
         this.currentUser = null;
         this.userRole = null;
 
-        // 🗑️ Удаляем сессию
         localStorage.removeItem("gameStats_session");
 
         this.updateAuthUI();
@@ -877,7 +1062,6 @@ class App {
             this.currentUser = loginResult.login;
             this.userRole = loginResult.role;
 
-            // 💾 Сохраняем сессию
             localStorage.setItem(
               "gameStats_session",
               JSON.stringify({

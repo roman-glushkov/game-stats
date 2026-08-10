@@ -5,6 +5,7 @@
 const DEFAULT_DATA = {
   players: {},
   gameSettings: {},
+  arcade: {},
 };
 
 const DEFAULT_LOGINS = {
@@ -14,7 +15,7 @@ const DEFAULT_LOGINS = {
 
 export class DataManager {
   constructor() {
-    this.data = { players: {}, gameSettings: {} };
+    this.data = { players: {}, gameSettings: {}, arcade: {} };
     this.logins = { admins: {}, users: {} };
     this.currentGameFilter = "all";
   }
@@ -66,11 +67,19 @@ export class DataManager {
           },
         };
       });
-      return { players: newPlayers, gameSettings: data.gameSettings || {} };
+      return {
+        players: newPlayers,
+        gameSettings: data.gameSettings || {},
+        arcade: data.arcade || {},
+      };
     }
 
     if (data.players && typeof data.players === "object") {
-      return { players: data.players, gameSettings: data.gameSettings || {} };
+      return {
+        players: data.players,
+        gameSettings: data.gameSettings || {},
+        arcade: data.arcade || {},
+      };
     }
 
     return JSON.parse(JSON.stringify(DEFAULT_DATA));
@@ -385,6 +394,67 @@ export class DataManager {
 
   getPlayerNames() {
     return Object.keys(this.data.players);
+  }
+
+  // ===== АРКАДЫ =====
+  getArcadeData() {
+    if (!this.data.arcade) {
+      this.data.arcade = {};
+    }
+    return this.data.arcade;
+  }
+
+  getArcadeLeaderboard(gameId) {
+    const arcade = this.getArcadeData();
+    if (!arcade[gameId]) {
+      arcade[gameId] = { records: [], gamesPlayed: 0 };
+    }
+    return arcade[gameId].records || [];
+  }
+
+  async saveArcadeScore(gameId, score, player = null) {
+    if (!player) {
+      player = this.currentUser || "Гость";
+    }
+
+    const arcade = this.getArcadeData();
+    if (!arcade[gameId]) {
+      arcade[gameId] = { records: [], gamesPlayed: 0 };
+    }
+
+    const existingIndex = arcade[gameId].records.findIndex(
+      (r) => r.player === player
+    );
+
+    if (existingIndex !== -1) {
+      const record = arcade[gameId].records[existingIndex];
+      record.totalScore = (record.totalScore || 0) + score;
+      record.gamesPlayed = (record.gamesPlayed || 0) + 1;
+      record.bestScore = Math.max(record.bestScore || 0, score);
+      record.lastScore = score;
+      record.date = new Date().toISOString().slice(0, 10);
+      record.winRate =
+        Math.round((record.totalScore / record.gamesPlayed) * 10) / 10;
+      arcade[gameId].records[existingIndex] = record;
+    } else {
+      arcade[gameId].records.push({
+        player: player,
+        totalScore: score,
+        bestScore: score,
+        lastScore: score,
+        gamesPlayed: 1,
+        winRate: score,
+        date: new Date().toISOString().slice(0, 10),
+      });
+    }
+
+    arcade[gameId].records.sort((a, b) => b.totalScore - a.totalScore);
+    arcade[gameId].records = arcade[gameId].records.slice(0, 20);
+    arcade[gameId].gamesPlayed = (arcade[gameId].gamesPlayed || 0) + 1;
+
+    this.data.arcade = arcade;
+    await this.saveData();
+    return true;
   }
 
   exportData() {

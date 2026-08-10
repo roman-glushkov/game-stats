@@ -6,44 +6,23 @@
 
     <title>🏆 GameStats Pro</title>
 
-    <!-- PWA Manifest -->
+    <link rel="stylesheet" href="css/style.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#0a0e1a" />
-
-    <!-- iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
     <meta name="apple-mobile-web-app-title" content="GameStats Pro" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192.png" />
-
-    <!-- Windows -->
-    <meta name="msapplication-TileColor" content="#0a0e1a" />
-    <meta name="msapplication-TileImage" content="/icons/icon-144.png" />
-
-    <!-- Основная иконка -->
     <link
       rel="icon"
       type="image/png"
       sizes="512x512"
       href="/icons/icon-512.png"
     />
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="192x192"
-      href="/icons/icon-192.png"
-    />
-
-    <!-- Стили -->
-    <link rel="stylesheet" href="css/style.css" />
-
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   </head>
 
   <body>
@@ -56,6 +35,9 @@
         </div>
 
         <nav class="nav-menu">
+          <!-- ГРУППОВЫЕ -->
+          <div class="nav-divider">👥 Групповые</div>
+
           <a href="#" class="nav-item active" data-section="dashboard">
             <span class="nav-icon">📊</span>
             <span class="nav-label">Главная</span>
@@ -68,15 +50,25 @@
           <a href="#" class="nav-item" data-section="leaderboard">
             <span class="nav-icon">🏆</span>
             <span class="nav-label">Таблица лидеров</span>
-          </a>
-          <a href="#" class="nav-item" data-section="charts">
-            <span class="nav-icon">📈</span>
-            <span class="nav-label">Визуализация</span>
+            <a href="#" class="nav-item" data-section="charts">
+              <span class="nav-icon">📈</span>
+              <span class="nav-label">Визуализация</span>
+            </a>
           </a>
           <a href="#" class="nav-item" data-section="games">
             <span class="nav-icon">🎮</span>
             <span class="nav-label">Игры</span>
           </a>
+
+          <!-- СОЛЬНЫЕ -->
+          <div class="nav-divider">🎯 Сольные</div>
+
+          <a href="#" class="nav-item" data-section="arcade">
+            <span class="nav-icon">🕹️</span>
+            <span class="nav-label">Аркады</span>
+            <span class="nav-badge" id="navArcadeBadge">Новое</span>
+          </a>
+
           <a href="#" class="nav-item" data-section="settings">
             <span class="nav-icon">⚙️</span>
             <span class="nav-label">Настройки</span>
@@ -231,6 +223,20 @@
             </div>
           </section>
 
+          <!-- GAMES -->
+          <section class="section" id="section-games">
+            <div class="card">
+              <div class="card-header">
+                <h2>🎮 Статистика по играм</h2>
+              </div>
+              <div class="card-body">
+                <div class="games-stats-grid" id="gamesStatsGrid">
+                  <p class="empty-state">Нет данных по играм</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <!-- CHARTS -->
           <section class="section" id="section-charts">
             <div class="card">
@@ -255,15 +261,34 @@
             </div>
           </section>
 
-          <!-- GAMES -->
-          <section class="section" id="section-games">
+          <!-- ARCADES -->
+          <section class="section" id="section-arcade">
             <div class="card">
               <div class="card-header">
-                <h2>🎮 Статистика по играм</h2>
+                <h2>🕹️ Аркады</h2>
+                <span style="color: var(--text-secondary); font-size: 13px"
+                  >Сольные игры с рейтингом</span
+                >
               </div>
               <div class="card-body">
-                <div class="games-stats-grid" id="gamesStatsGrid">
-                  <p class="empty-state">Нет данных по играм</p>
+                <div id="arcadeGrid" class="arcade-grid">
+                  <!-- Карточки игр -->
+                </div>
+                <div id="arcadeGameContainer" style="display: none">
+                  <!-- Контейнер для игры -->
+                </div>
+
+                <!-- Рейтинг аркад -->
+                <div id="arcadeLeaderboard" style="margin-top: 20px">
+                  <div class="arcade-leaderboard-header">
+                    <h3>🏆 Рейтинг аркад</h3>
+                    <span style="color: var(--text-secondary); font-size: 13px"
+                      >Лучшие игроки</span
+                    >
+                  </div>
+                  <div id="arcadeLeaderboardContent">
+                    <!-- Содержимое рейтинга -->
+                  </div>
                 </div>
               </div>
             </div>
