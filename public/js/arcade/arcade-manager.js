@@ -1,4 +1,5 @@
 import { ArcadeMemory } from "./arcade-memory.js";
+import { ArcadeYahtzee } from "./arcade-yahtzee.js";
 import { ArcadeLeaderboard } from "./arcade-leaderboard.js";
 
 export class ArcadeManager {
@@ -7,6 +8,7 @@ export class ArcadeManager {
     this.leaderboard = new ArcadeLeaderboard(storageManager);
     this.arcadeGame = null;
     this.arcadeActive = false;
+    this.gameType = null;
   }
 
   renderGames() {
@@ -22,6 +24,14 @@ export class ArcadeManager {
         description: "Найди пары одинаковых карточек против бота",
         players: 1,
         icon: "🧠",
+        requiresAuth: true,
+      },
+      {
+        id: "yahtzee",
+        name: "🎲 Ятзи",
+        description: "Бросай кубики и собирай комбинации против бота",
+        players: 1,
+        icon: "🎲",
         requiresAuth: true,
       },
       {
@@ -84,7 +94,6 @@ export class ArcadeManager {
   }
 
   startGame(gameId) {
-    // Проверка авторизации перед запуском игры
     if (!window.app?.isLoggedIn) {
       alert("⚠️ Для игры в аркады необходимо войти в систему");
       return;
@@ -93,6 +102,7 @@ export class ArcadeManager {
     if (this.arcadeActive) return;
 
     this.arcadeActive = true;
+    this.gameType = gameId;
     const grid = document.getElementById("arcadeGrid");
     const container = document.getElementById("arcadeGameContainer");
 
@@ -104,6 +114,9 @@ export class ArcadeManager {
       if (gameId === "memory") {
         this.arcadeGame = new ArcadeMemory(container);
         this.arcadeGame.manager = this;
+      } else if (gameId === "yahtzee") {
+        this.arcadeGame = new ArcadeYahtzee(container);
+        this.arcadeGame.manager = this;
       }
     }
   }
@@ -111,6 +124,7 @@ export class ArcadeManager {
   closeGame() {
     this.arcadeActive = false;
     this.arcadeGame = null;
+    this.gameType = null;
 
     const grid = document.getElementById("arcadeGrid");
     const container = document.getElementById("arcadeGameContainer");
@@ -130,9 +144,67 @@ export class ArcadeManager {
     }
   }
 
+  // Методы для Ятзи
+  yahtzeeRoll() {
+    if (this.arcadeGame && typeof this.arcadeGame.rollDice === "function") {
+      this.arcadeGame.rollDice();
+    }
+  }
+
+  yahtzeeToggle(index) {
+    if (this.arcadeGame && typeof this.arcadeGame.toggleHold === "function") {
+      this.arcadeGame.toggleHold(index);
+    }
+  }
+
+  yahtzeeChoose(category) {
+    if (
+      this.arcadeGame &&
+      typeof this.arcadeGame.chooseCategory === "function"
+    ) {
+      this.arcadeGame.chooseCategory(category);
+    }
+  }
+
+  yahtzeeFinish() {
+    if (this.arcadeGame && typeof this.arcadeGame.finishTurn === "function") {
+      this.arcadeGame.finishTurn();
+    }
+  }
+
   saveScore(gameId, score) {
     const player = window.app?.currentUser || "Гость";
     this.storageManager.saveArcadeScore(gameId, score, player);
     this.renderLeaderboard();
+  }
+
+  async deleteRecord(player) {
+    if (!window.app?.isLoggedIn || window.app?.userRole !== "admin") {
+      alert("⚠️ Только администратор может удалять рекорды");
+      return;
+    }
+
+    if (!confirm(`Удалить все рекорды игрока "${player}"?`)) return;
+
+    try {
+      const arcade = this.storageManager.getArcadeData();
+      const gameId = this.gameType || "memory";
+
+      if (arcade[gameId]) {
+        arcade[gameId].records = arcade[gameId].records.filter(
+          (r) => r.player !== player
+        );
+
+        this.storageManager.data.arcade = arcade;
+        await this.storageManager.saveData();
+
+        alert(`✅ Рекорды игрока "${player}" удалены`);
+        this.renderLeaderboard();
+        this.renderGames();
+      }
+    } catch (error) {
+      console.error("Ошибка удаления:", error);
+      alert("❌ Ошибка при удалении рекордов");
+    }
   }
 }

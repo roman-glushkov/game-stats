@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎲 Ятзи</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #0a0e1a;
+        color: #e2e8f0;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .game-container {
+        max-width: 750px;
+        width: 100%;
+        background: #1a1a2e;
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      }
+
+      /* ===== СЧЁТ ===== */
+      .score-header {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 40px;
+        padding: 15px 20px;
+        background: #22223a;
+        border-radius: 12px;
+        margin-bottom: 12px;
+      }
+
+      .score-header .score-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .score-header .score-block .label {
+        font-size: 12px;
+        color: #94a3b8;
+      }
+
+      .score-header .score-block .value {
+        font-size: 32px;
+        font-weight: bold;
+        line-height: 1.2;
+      }
+
+      .score-header .player-block .value {
+        color: #4f8cff;
+      }
+
+      .score-header .bot-block .value {
+        color: #f59e0b;
+      }
+
+      .score-header .vs {
+        font-size: 20px;
+        color: #4a4a6a;
+        font-weight: bold;
+      }
+
+      /* ===== БОНУС ТРЕКЕР ===== */
+      .bonus-tracker {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        padding: 6px 15px;
+        background: #1a1a2e;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        font-size: 13px;
+        color: #94a3b8;
+        border: 1px solid #2a2a4a;
+      }
+
+      .bonus-tracker .sum {
+        color: #e2e8f0;
+        font-weight: bold;
+      }
+
+      .bonus-tracker .sum.achieved {
+        color: #22c55e;
+      }
+
+      .bonus-tracker .bonus-status {
+        font-weight: bold;
+      }
+
+      .bonus-tracker .bonus-status.achieved {
+        color: #22c55e;
+      }
+
+      .bonus-tracker .bonus-status.not-achieved {
+        color: #4a4a6a;
+      }
+
+      /* ===== ИНДИКАТОР ХОДА ===== */
+      .turn-indicator {
+        text-align: center;
+        padding: 8px;
+        margin-bottom: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 8px;
+        background: #1a1a2e;
+        border: 2px solid #4f8cff;
+      }
+
+      .turn-indicator.bot-turn {
+        border-color: #f59e0b;
+      }
+
+      /* ===== ТАБЛИЦА ===== */
+      .table-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin: 8px 0;
+      }
+
+      .table-column {
+        background: #1a1a2e;
+        border-radius: 10px;
+        padding: 6px;
+      }
+
+      .table-column .col-title {
+        text-align: center;
+        font-size: 12px;
+        color: #94a3b8;
+        padding: 4px;
+        border-bottom: 1px solid #2a2a4a;
+        margin-bottom: 4px;
+      }
+
+      .category-row {
+        display: grid;
+        grid-template-columns: 1.6fr 0.7fr 0.7fr 0.6fr;
+        gap: 3px;
+        padding: 4px 8px;
+        background: #22223a;
+        border-radius: 5px;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 12px;
+        margin-bottom: 2px;
+      }
+
+      .category-row:hover {
+        background: #2a2a4a;
+      }
+
+      .category-row .name {
+        color: #e2e8f0;
+        font-weight: 500;
+        font-size: 12px;
+      }
+
+      .category-row .bot-score {
+        text-align: center;
+        color: #f59e0b;
+        font-weight: 600;
+        font-size: 13px;
+      }
+
+      .category-row .bot-score.empty {
+        color: #3a3a5a;
+      }
+
+      .category-row .player-score {
+        text-align: center;
+        color: #4f8cff;
+        font-weight: 600;
+        font-size: 13px;
+      }
+
+      .category-row .player-score.empty {
+        color: #3a3a5a;
+      }
+
+      .category-row .status {
+        text-align: center;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .category-row .status.available {
+        color: #22c55e;
+      }
+
+      .category-row .status.used {
+        color: #3a3a5a;
+      }
+
+      .category-row .status.best {
+        color: #f59e0b;
+        animation: pulse 1s infinite;
+      }
+
+      .category-row.available:hover {
+        background: #2a3a5a;
+        border: 1px solid #4f8cff;
+        margin: -1px;
+        margin-bottom: 1px;
+      }
+
+      .category-row.used-cat {
+        opacity: 0.5;
+        cursor: default;
+      }
+
+      .category-row.used-cat:hover {
+        transform: none;
+        background: #22223a;
+      }
+
+      .category-row.best-choice {
+        border: 2px solid #f59e0b;
+        margin: -1px;
+        margin-bottom: 1px;
+        background: rgba(245, 158, 11, 0.1);
+      }
+
+      .category-row.highlight {
+        border: 2px solid #4f8cff;
+        margin: -1px;
+        margin-bottom: 1px;
+        background: rgba(79, 140, 255, 0.08);
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+
+      /* ===== КУБИКИ ===== */
+      .dice-container {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        padding: 15px;
+        background: #1a1a2e;
+        border-radius: 12px;
+        margin: 10px 0;
+      }
+
+      .dice {
+        width: 68px;
+        height: 68px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 38px;
+        background: #2a2a4a;
+        border: 3px solid #3a3a5a;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        user-select: none;
+        position: relative;
+      }
+
+      .dice:hover {
+        transform: scale(1.05);
+        border-color: #4f8cff;
+      }
+
+      .dice.held {
+        border-color: #4f8cff;
+        background: rgba(79, 140, 255, 0.15);
+        box-shadow: 0 0 20px rgba(79, 140, 255, 0.2);
+      }
+
+      .dice.bot-dice {
+        opacity: 0.7;
+        cursor: default;
+      }
+
+      .dice.bot-dice:hover {
+        transform: none;
+      }
+
+      .dice .lock-icon {
+        position: absolute;
+        bottom: 2px;
+        right: 4px;
+        font-size: 11px;
+      }
+
+      /* ===== УПРАВЛЕНИЕ ===== */
+      .controls {
+        text-align: center;
+        margin: 10px 0;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .btn {
+        padding: 10px 28px;
+        font-size: 15px;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary {
+        background: #4f8cff;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #3a7aee;
+        transform: translateY(-2px);
+      }
+
+      .btn-primary:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .btn-success {
+        background: #22c55e;
+        color: white;
+      }
+
+      .btn-success:hover {
+        background: #16a34a;
+      }
+
+      .btn-secondary {
+        background: #3a3a5a;
+        color: #e2e8f0;
+      }
+
+      .btn-secondary:hover {
+        background: #4a4a6a;
+      }
+
+      .btn-warning {
+        background: #f59e0b;
+        color: #0a0e1a;
+      }
+
+      .btn-warning:hover {
+        background: #d97706;
+      }
+
+      .controls .hint {
+        color: #94a3b8;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+      }
+
+      .message {
+        text-align: center;
+        padding: 4px;
+        color: #94a3b8;
+        font-size: 13px;
+        min-height: 22px;
+      }
+
+      /* ===== ИГРА ОКОНЧЕНА ===== */
+      .game-over {
+        text-align: center;
+        padding: 20px;
+        background: #1a1a2e;
+        border-radius: 12px;
+        margin: 10px 0;
+        border: 2px solid #f59e0b;
+      }
+
+      .game-over h2 {
+        font-size: 28px;
+        margin-bottom: 12px;
+      }
+
+      .game-over .final-scores {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        margin: 12px 0;
+      }
+
+      .game-over .final-scores div {
+        text-align: center;
+      }
+
+      .game-over .final-scores .label {
+        color: #94a3b8;
+        font-size: 13px;
+      }
+
+      .game-over .final-scores .value {
+        font-size: 30px;
+        font-weight: bold;
+      }
+
+      .game-over .actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        margin-top: 15px;
+      }
+
+      /* ===== БОТ БРОСАЕТ ===== */
+      .bot-rolling {
+        animation: diceRoll 0.3s ease;
+      }
+
+      @keyframes diceRoll {
+        0% {
+          transform: rotate(0deg) scale(1);
+        }
+        25% {
+          transform: rotate(90deg) scale(1.1);
+        }
+        50% {
+          transform: rotate(180deg) scale(0.9);
+        }
+        75% {
+          transform: rotate(270deg) scale(1.1);
+        }
+        100% {
+          transform: rotate(360deg) scale(1);
+        }
+      }
+
+      /* ===== АДАПТИВ ===== */
+      @media (max-width: 650px) {
+        .game-container {
+          padding: 15px;
+        }
+
+        .score-header {
+          gap: 20px;
+          padding: 10px 15px;
+        }
+
+        .score-header .score-block .value {
+          font-size: 26px;
+        }
+
+        .table-wrapper {
+          grid-template-columns: 1fr;
+          gap: 6px;
+        }
+
+        .category-row {
+          font-size: 11px;
+          padding: 3px 6px;
+          grid-template-columns: 1.4fr 0.6fr 0.6fr 0.6fr;
+        }
+
+        .dice {
+          width: 52px;
+          height: 52px;
+          font-size: 28px;
+        }
+
+        .dice-container {
+          gap: 10px;
+          padding: 12px;
+        }
+
+        .btn {
+          padding: 8px 18px;
+          font-size: 13px;
+        }
+
+        .bonus-tracker {
+          font-size: 11px;
+          padding: 4px 10px;
+          flex-wrap: wrap;
+        }
+      }
+
+      @media (max-width: 400px) {
+        .dice {
+          width: 42px;
+          height: 42px;
+          font-size: 22px;
+        }
+
+        .dice-container {
+          gap: 6px;
+          padding: 10px;
+        }
+
+        .category-row {
+          font-size: 10px;
+          grid-template-columns: 1.2fr 0.5fr 0.5fr 0.5fr;
+          padding: 2px 4px;
+        }
+
+        .score-header .score-block .value {
+          font-size: 20px;
+        }
+
+        .score-header {
+          gap: 12px;
+          padding: 8px 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container" id="app">
+      <!-- ===== СЧЁТ ===== -->
+      <div class="score-header">
+        <div class="score-block player-block">
+          <div class="label">👤 Игрок</div>
+          <div class="value" id="playerTotal">0</div>
+        </div>
+        <div class="vs">⚔️</div>
+        <div class="score-block bot-block">
+          <div class="label">🤖 Бот</div>
+          <div class="value" id="botTotal">0</div>
+        </div>
+      </div>
+
+      <!-- ===== БОНУС ТРЕКЕР ===== -->
+      <div class="bonus-tracker" id="bonusTracker">
+        <span>📊 Верхняя секция:</span>
+        <span class="sum" id="upperSum">0</span>
+        <span>/ 63</span>
+        <span>|</span>
+        <span class="bonus-status" id="bonusStatus">Бонус: ❌</span>
+      </div>
+
+      <!-- ===== ИНДИКАТОР ХОДА ===== -->
+      <div class="turn-indicator" id="turnIndicator">👤 Ваш ход</div>
+
+      <!-- ===== ТАБЛИЦА ===== -->
+      <div class="table-wrapper" id="tableWrapper">
+        <div class="table-column" id="leftColumn">
+          <div class="col-title">📊 Верхняя секция</div>
+          <div id="upperCategories"></div>
+        </div>
+        <div class="table-column" id="rightColumn">
+          <div class="col-title">🎯 Нижняя секция</div>
+          <div id="lowerCategories"></div>
+        </div>
+      </div>
+
+      <!-- ===== КУБИКИ ===== -->
+      <div class="dice-container" id="diceContainer">
+        <div class="dice" data-index="0" onclick="toggleHold(0)">
+          <span class="dice-value">❓</span>
+        </div>
+        <div class="dice" data-index="1" onclick="toggleHold(1)">
+          <span class="dice-value">❓</span>
+        </div>
+        <div class="dice" data-index="2" onclick="toggleHold(2)">
+          <span class="dice-value">❓</span>
+        </div>
+        <div class="dice" data-index="3" onclick="toggleHold(3)">
+          <span class="dice-value">❓</span>
+        </div>
+        <div class="dice" data-index="4" onclick="toggleHold(4)">
+          <span class="dice-value">❓</span>
+        </div>
+      </div>
+
+      <!-- ===== УПРАВЛЕНИЕ ===== -->
+      <div class="controls">
+        <button class="btn btn-primary" id="rollBtn" onclick="rollDice()">
+          🎲 Бросить (3)
+        </button>
+        <button
+          class="btn btn-warning"
+          id="finishTurnBtn"
+          onclick="finishTurn()"
+          style="display: none"
+        >
+          ✅ Закончить ход
+        </button>
+        <span class="hint">💡 Кликните на кубик чтобы зафиксировать</span>
+      </div>
+
+      <div id="message" class="message">🎯 Нажмите "Бросить" чтобы начать</div>
+    </div>
+
+    <script>
+      // ============================================
+      // ИГРА ЯТЗИ
+      // ============================================
+
+      const DICE_EMOJIS = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+
+      const UPPER_CATEGORIES = [
+        { id: "ones", label: "1️⃣ Единицы" },
+        { id: "twos", label: "2️⃣ Двойки" },
+        { id: "threes", label: "3️⃣ Тройки" },
+        { id: "fours", label: "4️⃣ Четвёрки" },
+        { id: "fives", label: "5️⃣ Пятёрки" },
+        { id: "sixes", label: "6️⃣ Шестёрки" },
+      ];
+
+      const LOWER_CATEGORIES = [
+        { id: "threeOfKind", label: "🔱 Три одинаковых" },
+        { id: "fourOfKind", label: "💎 Четыре одинаковых" },
+        { id: "fullHouse", label: "🏠 Фулл хаус" },
+        { id: "smallStraight", label: "📏 Малый стрит" },
+        { id: "largeStraight", label: "📐 Большой стрит" },
+        { id: "yahtzee", label: "🎯 ЯТЗИ!" },
+        { id: "chance", label: "🎲 Шанс" },
+      ];
+
+      const ALL_CATEGORIES = [...UPPER_CATEGORIES, ...LOWER_CATEGORIES];
+
+      // ===== СОСТОЯНИЕ =====
+      let state = {
+        dice: [0, 0, 0, 0, 0],
+        held: [false, false, false, false, false],
+        rollsLeft: 3,
+        turn: 0,
+        isPlayerTurn: true,
+        isRolling: false,
+        gameOver: false,
+        turnFinished: false,
+        isBotRolling: false,
+        player: { points: 0, categories: {}, used: [], bonus: 0 },
+        bot: { points: 0, categories: {}, used: [], bonus: 0 },
+      };
+
+      // ===== ИНИЦИАЛИЗАЦИЯ =====
+      function init() {
+        resetGame();
+        render();
+      }
+
+      function resetGame() {
+        state.dice = [0, 0, 0, 0, 0];
+        state.held = [false, false, false, false, false];
+        state.rollsLeft = 3;
+        state.turn = 0;
+        state.isPlayerTurn = true;
+        state.isRolling = false;
+        state.gameOver = false;
+        state.turnFinished = false;
+        state.isBotRolling = false;
+        state.player = { points: 0, categories: {}, used: [], bonus: 0 };
+        state.bot = { points: 0, categories: {}, used: [], bonus: 0 };
+        document.getElementById("message").textContent =
+          '🎯 Нажмите "Бросить" чтобы начать';
+      }
+
+      // ===== ПОДСЧЁТ СУММЫ ВЕРХНЕЙ СЕКЦИИ =====
+      function getUpperSum(player) {
+        const used = state[player].used || [];
+        const upperIds = UPPER_CATEGORIES.map((c) => c.id);
+        let sum = 0;
+        upperIds.forEach((id) => {
+          if (used.includes(id)) {
+            sum += state[player].categories[id] || 0;
+          }
+        });
+        return sum;
+      }
+
+      // ===== КУБИКИ =====
+      function rollDice() {
+        if (state.gameOver || state.isRolling) return;
+        if (!state.isPlayerTurn) return;
+        if (state.rollsLeft <= 0) return;
+        if (state.turnFinished) {
+          document.getElementById("message").textContent =
+            "⚠️ Вы уже завершили ход!";
+          return;
+        }
+
+        state.isRolling = true;
+        state.rollsLeft--;
+
+        for (let i = 0; i < 5; i++) {
+          if (!state.held[i]) {
+            state.dice[i] = Math.floor(Math.random() * 6) + 1;
+          }
+        }
+
+        render();
+
+        if (state.rollsLeft === 0) {
+          document.getElementById("message").textContent =
+            '🎯 Выберите категорию или нажмите "Закончить ход"';
+        } else {
+          const usedCount = state.player.used.length;
+          document.getElementById(
+            "message"
+          ).textContent = `🎲 Осталось бросков: ${
+            state.rollsLeft
+          }. Выберите кубики для фиксации (${usedCount + 1}/13)`;
+        }
+
+        state.isRolling = false;
+
+        if (state.rollsLeft < 3 && state.isPlayerTurn && !state.gameOver) {
+          document.getElementById("finishTurnBtn").style.display =
+            "inline-block";
+        }
+      }
+
+      function toggleHold(index) {
+        if (state.gameOver || state.isRolling) return;
+        if (!state.isPlayerTurn) return;
+        if (state.rollsLeft === 3) {
+          document.getElementById("message").textContent =
+            "⚠️ Сначала бросьте кубики!";
+          return;
+        }
+        if (state.dice[index] === 0) return;
+        if (state.turnFinished) {
+          document.getElementById("message").textContent =
+            "⚠️ Вы уже завершили ход!";
+          return;
+        }
+
+        state.held[index] = !state.held[index];
+        render();
+      }
+
+      // ===== ЗАВЕРШИТЬ ХОД =====
+      function finishTurn() {
+        if (state.gameOver || state.isRolling) return;
+        if (!state.isPlayerTurn) return;
+        if (state.turnFinished) return;
+        if (state.rollsLeft === 3) {
+          document.getElementById("message").textContent =
+            "⚠️ Сначала бросьте кубики!";
+          return;
+        }
+
+        const available = getAvailableCategories("player");
+        if (available.length === 0) {
+          document.getElementById("message").textContent =
+            "❌ Нет доступных категорий!";
+          return;
+        }
+
+        let bestCategory = available[0];
+        let bestScore = -1;
+
+        available.forEach((cat) => {
+          const score = calculateScore(cat.id, state.dice);
+          if (score > bestScore) {
+            bestScore = score;
+            bestCategory = cat.id;
+          }
+        });
+
+        if (bestScore === -1) {
+          bestCategory = available[0].id;
+          bestScore = 0;
+        }
+
+        applyCategory("player", bestCategory, bestScore);
+      }
+
+      // ===== ПРИМЕНИТЬ КАТЕГОРИЮ =====
+      function applyCategory(player, categoryId, points) {
+        if (state[player].used.includes(categoryId)) return;
+
+        state[player].categories[categoryId] = points;
+        state[player].used.push(categoryId);
+        state[player].points += points;
+
+        // Проверяем бонус
+        const upperSum = getUpperSum(player);
+        if (upperSum >= 63 && state[player].bonus === 0) {
+          const upperIds = UPPER_CATEGORIES.map((c) => c.id);
+          const allUpperUsed = upperIds.every((id) =>
+            state[player].used.includes(id)
+          );
+          if (allUpperUsed) {
+            state[player].points += 35;
+            state[player].bonus = 35;
+          }
+        }
+
+        if (player === "player") {
+          state.turnFinished = true;
+          document.getElementById(
+            "message"
+          ).textContent = `✅ Записано ${points} очков!`;
+          document.getElementById("finishTurnBtn").style.display = "none";
+
+          setTimeout(() => {
+            state.isPlayerTurn = false;
+            state.rollsLeft = 3;
+            state.held = [false, false, false, false, false];
+            state.turn++;
+            state.turnFinished = false;
+            state.dice = [0, 0, 0, 0, 0];
+            render();
+            setTimeout(() => botTurn(), 500);
+          }, 600);
+        } else {
+          state.isPlayerTurn = true;
+          state.rollsLeft = 3;
+          state.held = [false, false, false, false, false];
+          state.dice = [0, 0, 0, 0, 0];
+          state.turn++;
+          state.turnFinished = false;
+          document.getElementById("message").textContent =
+            "👤 Ваш ход! Бросайте кубики!";
+          render();
+          checkGameOver();
+        }
+
+        render();
+      }
+
+      // ===== ПОДСЧЁТ ОЧКОВ =====
+      function getDiceCounts(dice) {
+        const counts = [0, 0, 0, 0, 0, 0];
+        dice.forEach((d) => {
+          if (d > 0) counts[d - 1]++;
+        });
+        return counts;
+      }
+
+      function calculateScore(category, dice) {
+        const counts = getDiceCounts(dice);
+        const sum = dice.reduce((a, b) => a + b, 0);
+        const sorted = [...dice].filter((d) => d > 0).sort((a, b) => a - b);
+
+        switch (category) {
+          case "ones":
+            return counts[0] * 1;
+          case "twos":
+            return counts[1] * 2;
+          case "threes":
+            return counts[2] * 3;
+          case "fours":
+            return counts[3] * 4;
+          case "fives":
+            return counts[4] * 5;
+          case "sixes":
+            return counts[5] * 6;
+          case "threeOfKind":
+            for (let i = 0; i < 6; i++) {
+              if (counts[i] >= 3) return sum;
+            }
+            return 0;
+          case "fourOfKind":
+            for (let i = 0; i < 6; i++) {
+              if (counts[i] >= 4) return sum;
+            }
+            return 0;
+          case "fullHouse":
+            let hasTwo = false,
+              hasThree = false;
+            for (let i = 0; i < 6; i++) {
+              if (counts[i] === 2) hasTwo = true;
+              if (counts[i] === 3) hasThree = true;
+            }
+            if (counts.some((c) => c === 5)) return 25;
+            return hasTwo && hasThree ? 25 : 0;
+          case "smallStraight":
+            const smallStraights = [
+              [1, 2, 3, 4],
+              [2, 3, 4, 5],
+              [3, 4, 5, 6],
+            ];
+            for (const straight of smallStraights) {
+              if (straight.every((v) => sorted.includes(v))) return 30;
+            }
+            return 0;
+          case "largeStraight":
+            const largeStraights = [
+              [1, 2, 3, 4, 5],
+              [2, 3, 4, 5, 6],
+            ];
+            for (const straight of largeStraights) {
+              if (straight.every((v) => sorted.includes(v))) return 40;
+            }
+            return 0;
+          case "yahtzee":
+            for (let i = 0; i < 6; i++) {
+              if (counts[i] === 5) return 50;
+            }
+            return 0;
+          case "chance":
+            return sum;
+          default:
+            return 0;
+        }
+      }
+
+      function getAvailableCategories(player) {
+        const used = state[player].used || [];
+        return ALL_CATEGORIES.filter((c) => !used.includes(c.id));
+      }
+
+      // ===== ВЫБОР КАТЕГОРИИ =====
+      function chooseCategory(categoryId) {
+        if (state.gameOver || state.isRolling) return;
+        if (!state.isPlayerTurn) return;
+        if (state.player.used.includes(categoryId)) return;
+        if (state.rollsLeft === 3) {
+          document.getElementById("message").textContent =
+            "⚠️ Сначала бросьте кубики!";
+          return;
+        }
+        if (state.turnFinished) {
+          document.getElementById("message").textContent =
+            "⚠️ Вы уже завершили ход!";
+          return;
+        }
+
+        const points = calculateScore(categoryId, state.dice);
+        applyCategory("player", categoryId, points);
+      }
+
+      // ===== ХОД БОТА С ВИЗУАЛИЗАЦИЕЙ =====
+      function botTurn() {
+        if (state.gameOver) return;
+
+        state.isPlayerTurn = false;
+        state.isBotRolling = true;
+        document.getElementById("message").textContent =
+          "🤖 Бот бросает кубики...";
+
+        let botDice = [0, 0, 0, 0, 0];
+        let botHeld = [false, false, false, false, false];
+
+        // Функция для анимации броска бота
+        function botRollStep(rollIndex) {
+          if (rollIndex >= 3) {
+            // Все броски сделаны, выбираем категорию
+            finishBotTurn(botDice);
+            return;
+          }
+
+          for (let i = 0; i < 5; i++) {
+            if (!botHeld[i]) {
+              botDice[i] = Math.floor(Math.random() * 6) + 1;
+            }
+          }
+
+          // Бот решает что держать
+          const counts = getDiceCounts(botDice);
+          for (let i = 0; i < 5; i++) {
+            botHeld[i] = counts[botDice[i] - 1] >= 2;
+          }
+
+          // Показываем кубики бота
+          state.dice = [...botDice];
+          state.isBotRolling = true;
+          render();
+
+          // Добавляем анимацию
+          const diceEls = document.querySelectorAll(".dice");
+          diceEls.forEach((el) => {
+            el.classList.add("bot-rolling");
+            setTimeout(() => el.classList.remove("bot-rolling"), 300);
+          });
+
+          document.getElementById(
+            "message"
+          ).textContent = `🤖 Бот бросает... (${rollIndex + 1}/3)`;
+
+          setTimeout(() => {
+            botRollStep(rollIndex + 1);
+          }, 600);
+        }
+
+        function finishBotTurn(botDice) {
+          state.isBotRolling = false;
+          state.dice = [...botDice];
+          render();
+
+          const available = getAvailableCategories("bot");
+          if (available.length === 0) {
+            checkGameOver();
+            return;
+          }
+
+          let bestCategory = available[0];
+          let bestScore = -1;
+
+          available.forEach((cat) => {
+            const score = calculateScore(cat.id, botDice);
+            if (score > bestScore) {
+              bestScore = score;
+              bestCategory = cat.id;
+            }
+          });
+
+          if (bestScore === -1) {
+            bestCategory = available[0].id;
+            bestScore = 0;
+          }
+
+          document.getElementById(
+            "message"
+          ).textContent = `🤖 Бот выбрал "${bestCategory}" за ${bestScore} очков`;
+
+          setTimeout(() => {
+            applyCategory("bot", bestCategory, bestScore);
+          }, 400);
+        }
+
+        // Запускаем броски бота
+        setTimeout(() => botRollStep(0), 400);
+      }
+
+      // ===== ПРОВЕРКА ОКОНЧАНИЯ =====
+      function checkGameOver() {
+        if (state.player.used.length === 13 && state.bot.used.length === 13) {
+          state.gameOver = true;
+          document.getElementById("message").textContent = "🏁 Игра окончена!";
+          document.getElementById("finishTurnBtn").style.display = "none";
+          render();
+          return true;
+        }
+        return false;
+      }
+
+      // ===== РЕНДЕРИНГ =====
+      function render() {
+        // Счёт
+        document.getElementById("playerTotal").textContent =
+          state.player.points;
+        document.getElementById("botTotal").textContent = state.bot.points;
+
+        // Бонус трекер
+        const upperSum = getUpperSum("player");
+        const upperSumEl = document.getElementById("upperSum");
+        upperSumEl.textContent = upperSum;
+        upperSumEl.className = `sum ${upperSum >= 63 ? "achieved" : ""}`;
+
+        const bonusStatus = document.getElementById("bonusStatus");
+        if (state.player.bonus > 0) {
+          bonusStatus.textContent = "🎉 Бонус +35!";
+          bonusStatus.className = "bonus-status achieved";
+        } else if (upperSum >= 63) {
+          const upperIds = UPPER_CATEGORIES.map((c) => c.id);
+          const allUsed = upperIds.every((id) =>
+            state.player.used.includes(id)
+          );
+          if (allUsed) {
+            bonusStatus.textContent = "🎉 Бонус +35!";
+            bonusStatus.className = "bonus-status achieved";
+          } else {
+            bonusStatus.textContent = "✅ Цель достигнута!";
+            bonusStatus.className = "bonus-status achieved";
+          }
+        } else {
+          bonusStatus.textContent = `❌ Нужно ещё ${63 - upperSum}`;
+          bonusStatus.className = "bonus-status not-achieved";
+        }
+
+        // Индикатор хода
+        const turnIndicator = document.getElementById("turnIndicator");
+        if (state.gameOver) {
+          turnIndicator.textContent = "🏁 Игра окончена!";
+          turnIndicator.style.borderColor = "#f59e0b";
+          turnIndicator.className = "turn-indicator";
+        } else if (state.isBotRolling) {
+          turnIndicator.textContent = "🤖 Бот бросает...";
+          turnIndicator.style.borderColor = "#f59e0b";
+          turnIndicator.className = "turn-indicator bot-turn";
+        } else if (state.isPlayerTurn) {
+          const used = state.player.used.length;
+          turnIndicator.textContent = `👤 Ваш ход (${used + 1}/13)`;
+          turnIndicator.style.borderColor = "#4f8cff";
+          turnIndicator.className = "turn-indicator";
+        } else {
+          turnIndicator.textContent = "🤖 Ход бота...";
+          turnIndicator.style.borderColor = "#f59e0b";
+          turnIndicator.className = "turn-indicator bot-turn";
+        }
+
+        // Кнопка броска
+        const rollBtn = document.getElementById("rollBtn");
+        const finishBtn = document.getElementById("finishTurnBtn");
+
+        if (state.gameOver) {
+          rollBtn.textContent = "🔄 Новая игра";
+          rollBtn.onclick = () => {
+            resetGame();
+            render();
+          };
+          rollBtn.disabled = false;
+          rollBtn.className = "btn btn-success";
+          finishBtn.style.display = "none";
+        } else if (state.isBotRolling || !state.isPlayerTurn) {
+          rollBtn.textContent = state.isBotRolling
+            ? "🤖 Бот бросает..."
+            : "🤖 Ход бота...";
+          rollBtn.disabled = true;
+          rollBtn.className = "btn btn-secondary";
+          finishBtn.style.display = "none";
+        } else if (state.turnFinished) {
+          rollBtn.textContent = "⏳ Ожидание...";
+          rollBtn.disabled = true;
+          rollBtn.className = "btn btn-secondary";
+          finishBtn.style.display = "none";
+        } else if (state.rollsLeft === 0) {
+          rollBtn.textContent = "🎯 Выберите категорию";
+          rollBtn.disabled = true;
+          rollBtn.className = "btn btn-secondary";
+          finishBtn.style.display = "inline-block";
+          finishBtn.textContent = "✅ Закончить ход (авто)";
+          finishBtn.onclick = finishTurn;
+        } else if (state.rollsLeft === 3) {
+          rollBtn.textContent = "🎲 Бросить (3)";
+          rollBtn.disabled = false;
+          rollBtn.onclick = rollDice;
+          rollBtn.className = "btn btn-primary";
+          finishBtn.style.display = "none";
+        } else {
+          rollBtn.textContent = `🎲 Бросить (${state.rollsLeft})`;
+          rollBtn.disabled = false;
+          rollBtn.onclick = rollDice;
+          rollBtn.className = "btn btn-primary";
+          finishBtn.style.display = "inline-block";
+          finishBtn.textContent = "✅ Закончить ход (авто)";
+          finishBtn.onclick = finishTurn;
+        }
+
+        // Кубики
+        const diceElements = document.querySelectorAll(".dice");
+        diceElements.forEach((el, i) => {
+          const value = state.dice[i];
+          const isHeld = state.held[i];
+          const valueEl = el.querySelector(".dice-value");
+
+          if (value === 0) {
+            valueEl.textContent = "❓";
+          } else {
+            valueEl.textContent = DICE_EMOJIS[value - 1];
+          }
+
+          const canClick =
+            state.isPlayerTurn &&
+            !state.gameOver &&
+            state.rollsLeft < 3 &&
+            state.rollsLeft > 0 &&
+            value > 0 &&
+            !state.turnFinished &&
+            !state.isBotRolling;
+
+          el.className = `dice ${isHeld ? "held" : ""} ${
+            state.isBotRolling ? "bot-dice" : ""
+          }`;
+          el.style.cursor = canClick ? "pointer" : "default";
+        });
+
+        // ===== КАТЕГОРИИ =====
+        const availableIds = getAvailableCategories("player").map((c) => c.id);
+        const isPlayerTurnAndReady =
+          state.isPlayerTurn &&
+          !state.gameOver &&
+          !state.turnFinished &&
+          !state.isBotRolling;
+
+        // Верхняя секция
+        const upperContainer = document.getElementById("upperCategories");
+        upperContainer.innerHTML = UPPER_CATEGORIES.map((cat) =>
+          renderCategoryRow(cat, availableIds, isPlayerTurnAndReady)
+        ).join("");
+
+        // Нижняя секция
+        const lowerContainer = document.getElementById("lowerCategories");
+        lowerContainer.innerHTML = LOWER_CATEGORIES.map((cat) =>
+          renderCategoryRow(cat, availableIds, isPlayerTurnAndReady)
+        ).join("");
+      }
+
+      function renderCategoryRow(cat, availableIds, isPlayerTurnAndReady) {
+        const catId = cat.id;
+        const isUsed = state.player.used.includes(catId);
+        const isAvailable = availableIds.includes(catId);
+
+        const playerScore = state.player.categories[catId];
+        const botScore = state.bot.categories[catId];
+
+        const playerScoreDisplay = playerScore !== undefined ? playerScore : "";
+        const botScoreDisplay = botScore !== undefined ? botScore : "";
+
+        let currentScore = "";
+        let statusClass = "empty";
+        let statusText = "";
+
+        const hasDice = state.dice.some((d) => d > 0);
+
+        if (isUsed) {
+          statusClass = "used";
+          statusText = "✅";
+        } else if (
+          isAvailable &&
+          isPlayerTurnAndReady &&
+          hasDice &&
+          !state.turnFinished
+        ) {
+          currentScore = calculateScore(catId, state.dice);
+          statusClass = "available";
+          statusText = `${currentScore}`;
+
+          const allScores = availableIds.map((id) => ({
+            id: id,
+            score: calculateScore(id, state.dice),
+          }));
+          const maxScore = Math.max(...allScores.map((s) => s.score));
+          if (currentScore === maxScore && currentScore > 0) {
+            statusClass = "best";
+          }
+        } else if (isAvailable) {
+          statusClass = "available";
+          statusText = "⬜";
+        } else {
+          statusClass = "used";
+          statusText = "🔒";
+        }
+
+        const isBest = statusClass === "best";
+        const isHighlight =
+          isAvailable &&
+          isPlayerTurnAndReady &&
+          hasDice &&
+          !state.turnFinished &&
+          !isUsed;
+
+        const rowClass = `category-row ${isUsed ? "used-cat" : ""} ${
+          isBest ? "best-choice" : ""
+        } ${isHighlight ? "highlight" : ""} ${
+          isAvailable && !isUsed ? "available" : ""
+        }`;
+
+        const canClick =
+          isAvailable &&
+          !isUsed &&
+          isPlayerTurnAndReady &&
+          hasDice &&
+          !state.turnFinished &&
+          state.rollsLeft < 3 &&
+          state.rollsLeft >= 0;
+
+        const onclick = canClick ? `onclick="chooseCategory('${catId}')"` : "";
+
+        const playerClass = playerScore !== undefined ? "" : "empty";
+        const botClass = botScore !== undefined ? "" : "empty";
+
+        return `
+                <div class="${rowClass}" ${onclick} style="${
+          canClick ? "cursor: pointer;" : "cursor: default;"
+        }">
+                    <span class="name">${cat.label}</span>
+                    <span class="bot-score ${botClass}">${
+          botScoreDisplay !== "" ? botScoreDisplay : "—"
+        }</span>
+                    <span class="player-score ${playerClass}">${
+          playerScoreDisplay !== "" ? playerScoreDisplay : "—"
+        }</span>
+                    <span class="status ${statusClass}">${statusText}</span>
+                </div>
+            `;
+      }
+
+      // ===== ЗАПУСК =====
+      document.addEventListener("DOMContentLoaded", init);
+    </script>
+  </body>
+</html>
