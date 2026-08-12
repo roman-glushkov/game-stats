@@ -172,6 +172,32 @@ export class ArcadeManager {
     }
   }
 
+  yahtzeeSelect(category) {
+    if (
+      this.arcadeGame &&
+      typeof this.arcadeGame.selectCategory === "function"
+    ) {
+      this.arcadeGame.selectCategory(category);
+    }
+  }
+  yahtzeeClick(category) {
+    if (
+      this.arcadeGame &&
+      typeof this.arcadeGame.clickPlayerCell === "function"
+    ) {
+      this.arcadeGame.clickPlayerCell(category);
+    }
+  }
+
+  yahtzeePlay() {
+    if (this.arcadeGame && typeof this.arcadeGame.confirmPlay === "function") {
+      this.arcadeGame.confirmPlay();
+    }
+  }
+  leaderboardSwitch(gameId) {
+    this.leaderboard.switchGame(gameId);
+  }
+
   saveScore(gameId, score) {
     const player = window.app?.currentUser || "Гость";
     this.storageManager.saveArcadeScore(gameId, score, player);

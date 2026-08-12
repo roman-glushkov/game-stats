@@ -12,6 +12,8 @@ export class ArcadeYahtzee {
     this.gameOver = false;
     this.turnFinished = false;
     this.isBotRolling = false;
+    this.pendingCategory = null;
+    this.pendingScore = null;
 
     this.player = { points: 0, categories: {}, used: [], bonus: 0 };
     this.bot = { points: 0, categories: {}, used: [], bonus: 0 };
@@ -23,47 +25,183 @@ export class ArcadeYahtzee {
     this.render();
   }
 
-  // ===== КОНСТАНТЫ =====
-  get DICE_EMOJIS() {
-    return ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+  // ===== SVG КУБИКИ =====
+  getDiceSVG(value) {
+    if (value === 0) return "❓";
+
+    const dotPositions = {
+      1: [[1, 1]],
+      2: [
+        [0, 0],
+        [2, 2],
+      ],
+      3: [
+        [0, 0],
+        [1, 1],
+        [2, 2],
+      ],
+      4: [
+        [0, 0],
+        [0, 2],
+        [2, 0],
+        [2, 2],
+      ],
+      5: [
+        [0, 0],
+        [0, 2],
+        [1, 1],
+        [2, 0],
+        [2, 2],
+      ],
+      6: [
+        [0, 0],
+        [0, 2],
+        [1, 0],
+        [1, 2],
+        [2, 0],
+        [2, 2],
+      ],
+    };
+
+    const dots = dotPositions[value] || [];
+    const size = 60;
+    const dotSize = 7;
+    const padding = 12;
+    const step = (size - padding * 2) / 2;
+
+    return `
+      <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display: block;">
+        <rect x="2" y="4" width="${size - 4}" height="${
+      size - 4
+    }" rx="8" fill="rgba(0,0,0,0.15)"/>
+        <rect x="0" y="0" width="${size}" height="${size}" rx="10" fill="white" stroke="#d0d0d0" stroke-width="1.5"/>
+        <rect x="0" y="0" width="${size}" height="${size}" rx="10" fill="url(#diceGrad)" stroke="#d0d0d0" stroke-width="1.5"/>
+        ${dots
+          .map(
+            ([row, col]) => `
+          <circle cx="${padding + col * step}" cy="${
+              padding + row * step
+            }" r="${dotSize}" fill="#1a1a2e"/>
+          <circle cx="${padding + col * step + 1}" cy="${
+              padding + row * step + 1
+            }" r="${dotSize - 2}" fill="#2a2a4a"/>
+        `
+          )
+          .join("")}
+        <defs>
+          <radialGradient id="diceGrad" cx="40%" cy="35%" r="70%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+            <stop offset="60%" stop-color="#f5f5f5" stop-opacity="0.6"/>
+            <stop offset="100%" stop-color="#e0e0e0" stop-opacity="0.2"/>
+          </radialGradient>
+        </defs>
+      </svg>
+    `;
   }
 
   get UPPER_CATEGORIES() {
     return [
-      { id: "ones", label: "1️⃣ Единицы" },
-      { id: "twos", label: "2️⃣ Двойки" },
-      { id: "threes", label: "3️⃣ Тройки" },
-      { id: "fours", label: "4️⃣ Четвёрки" },
-      { id: "fives", label: "5️⃣ Пятёрки" },
-      { id: "sixes", label: "6️⃣ Шестёрки" },
+      { id: "ones", icon: "1" },
+      { id: "twos", icon: "2" },
+      { id: "threes", icon: "3" },
+      { id: "fours", icon: "4" },
+      { id: "fives", icon: "5" },
+      { id: "sixes", icon: "6" },
     ];
   }
 
   get LOWER_CATEGORIES() {
     return [
-      { id: "threeOfKind", label: "🔱 Три одинаковых" },
-      { id: "fourOfKind", label: "💎 Четыре одинаковых" },
-      { id: "fullHouse", label: "🏠 Фулл хаус" },
-      { id: "smallStraight", label: "📏 Малый стрит" },
-      { id: "largeStraight", label: "📐 Большой стрит" },
-      { id: "yahtzee", label: "🎯 ЯТЗИ!" },
-      { id: "chance", label: "🎲 Шанс" },
+      { id: "threeOfKind", icon: "3x" },
+      { id: "fourOfKind", icon: "4x" },
+      { id: "fullHouse", icon: "🏠" },
+      { id: "smallStraight", icon: "📏" },
+      { id: "largeStraight", icon: "📐" },
+      { id: "yahtzee", icon: "⭐" },
+      { id: "chance", icon: "❓" },
     ];
   }
+  getSmallDiceSVG(value) {
+    if (value === 0 || value > 6) return "?";
 
+    const dotPositions = {
+      1: [[1, 1]],
+      2: [
+        [0, 0],
+        [2, 2],
+      ],
+      3: [
+        [0, 0],
+        [1, 1],
+        [2, 2],
+      ],
+      4: [
+        [0, 0],
+        [0, 2],
+        [2, 0],
+        [2, 2],
+      ],
+      5: [
+        [0, 0],
+        [0, 2],
+        [1, 1],
+        [2, 0],
+        [2, 2],
+      ],
+      6: [
+        [0, 0],
+        [0, 2],
+        [1, 0],
+        [1, 2],
+        [2, 0],
+        [2, 2],
+      ],
+    };
+
+    const dots = dotPositions[value] || [];
+    const size = 30;
+    const dotSize = 4;
+    const padding = 5;
+    const step = (size - padding * 2) / 2;
+
+    return `
+    <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display: block;">
+      <rect x="0" y="0" width="${size}" height="${size}" rx="5" fill="white" stroke="#d0d0d0" stroke-width="1"/>
+      <rect x="0" y="0" width="${size}" height="${size}" rx="5" fill="url(#smallDiceGrad)" stroke="#d0d0d0" stroke-width="1"/>
+      ${dots
+        .map(
+          ([row, col]) => `
+        <circle cx="${padding + col * step}" cy="${
+            padding + row * step
+          }" r="${dotSize}" fill="#1a1a2e"/>
+      `
+        )
+        .join("")}
+      <defs>
+        <radialGradient id="smallDiceGrad" cx="40%" cy="35%" r="70%">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+          <stop offset="60%" stop-color="#f5f5f5" stop-opacity="0.6"/>
+          <stop offset="100%" stop-color="#e0e0e0" stop-opacity="0.2"/>
+        </radialGradient>
+      </defs>
+    </svg>
+  `;
+  }
   get ALL_CATEGORIES() {
     return [...this.UPPER_CATEGORIES, ...this.LOWER_CATEGORIES];
   }
 
-  // ===== КУБИКИ =====
   rollDice() {
     if (this.gameOver || this.isRolling) return;
     if (!this.isPlayerTurn) return;
     if (this.rollsLeft <= 0) return;
     if (this.turnFinished) {
-      this.showMessage("⚠️ Вы уже завершили ход!");
+      this.showMessage("⚠️ Ход завершён!");
       return;
     }
+
+    this.pendingCategory = null;
+    this.pendingScore = null;
 
     this.isRolling = true;
     this.rollsLeft--;
@@ -77,30 +215,24 @@ export class ArcadeYahtzee {
     this.render();
 
     if (this.rollsLeft === 0) {
-      this.showMessage('🎯 Выберите категорию или нажмите "Закончить ход"');
+      this.showMessage("🎯 Кликните по полю чтобы посмотреть очки");
     } else {
-      const usedCount = this.player.used.length;
-      this.showMessage(
-        `🎲 Осталось бросков: ${
-          this.rollsLeft
-        }. Выберите кубики для фиксации (${usedCount + 1}/13)`
-      );
+      this.showMessage(`🎲 Осталось: ${this.rollsLeft} | 🔒 Кликните кубик`);
     }
 
     this.isRolling = false;
-    this.updateControls();
   }
 
   toggleHold(index) {
     if (this.gameOver || this.isRolling) return;
     if (!this.isPlayerTurn) return;
     if (this.rollsLeft === 3) {
-      this.showMessage("⚠️ Сначала бросьте кубики!");
+      this.showMessage("⚠️ Сначала бросьте!");
       return;
     }
     if (this.dice[index] === 0) return;
     if (this.turnFinished) {
-      this.showMessage("⚠️ Вы уже завершили ход!");
+      this.showMessage("⚠️ Ход завершён!");
       return;
     }
 
@@ -108,7 +240,6 @@ export class ArcadeYahtzee {
     this.render();
   }
 
-  // ===== ПОДСЧЁТ ОЧКОВ =====
   getDiceCounts(dice) {
     const counts = [0, 0, 0, 0, 0, 0];
     dice.forEach((d) => {
@@ -202,21 +333,49 @@ export class ArcadeYahtzee {
     return sum;
   }
 
-  // ===== ВЫБОР КАТЕГОРИИ =====
-  chooseCategory(categoryId) {
+  clickPlayerCell(categoryId) {
     if (this.gameOver || this.isRolling) return;
     if (!this.isPlayerTurn) return;
     if (this.player.used.includes(categoryId)) return;
     if (this.rollsLeft === 3) {
-      this.showMessage("⚠️ Сначала бросьте кубики!");
+      this.showMessage("⚠️ Сначала бросьте!");
       return;
     }
     if (this.turnFinished) {
-      this.showMessage("⚠️ Вы уже завершили ход!");
+      this.showMessage("⚠️ Ход завершён!");
       return;
     }
 
     const points = this.calculateScore(categoryId, this.dice);
+
+    if (this.pendingCategory === categoryId) {
+      this.pendingCategory = null;
+      this.pendingScore = null;
+      this.showMessage("👆 Выбор отменён");
+      this.render();
+      return;
+    }
+
+    this.pendingCategory = categoryId;
+    this.pendingScore = points;
+    this.showMessage(`📊 ${points} очков. Нажмите "✅ Играть"`);
+    this.render();
+  }
+
+  confirmPlay() {
+    if (!this.pendingCategory || this.pendingScore === null) {
+      this.showMessage("⚠️ Сначала выберите категорию");
+      return;
+    }
+    if (this.gameOver || this.isRolling) return;
+    if (!this.isPlayerTurn) return;
+    if (this.turnFinished) return;
+
+    const categoryId = this.pendingCategory;
+    const points = this.pendingScore;
+
+    this.pendingCategory = null;
+    this.pendingScore = null;
     this.applyCategory("player", categoryId, points);
   }
 
@@ -227,7 +386,6 @@ export class ArcadeYahtzee {
     this[player].used.push(categoryId);
     this[player].points += points;
 
-    // Проверяем бонус
     const upperSum = this.getUpperSum(player);
     if (upperSum >= 63 && this[player].bonus === 0) {
       const upperIds = this.UPPER_CATEGORIES.map((c) => c.id);
@@ -242,7 +400,7 @@ export class ArcadeYahtzee {
 
     if (player === "player") {
       this.turnFinished = true;
-      this.showMessage(`✅ Записано ${points} очков!`);
+      this.showMessage(`✅ ${points} очков!`);
 
       setTimeout(() => {
         this.isPlayerTurn = false;
@@ -261,7 +419,9 @@ export class ArcadeYahtzee {
       this.dice = [0, 0, 0, 0, 0];
       this.turn++;
       this.turnFinished = false;
-      this.showMessage("👤 Ваш ход! Бросайте кубики!");
+      this.pendingCategory = null;
+      this.pendingScore = null;
+      this.showMessage("👤 Ваш ход!");
       this.render();
       this.checkGameOver();
     }
@@ -269,48 +429,12 @@ export class ArcadeYahtzee {
     this.render();
   }
 
-  // ===== ЗАВЕРШИТЬ ХОД (АВТО) =====
-  finishTurn() {
-    if (this.gameOver || this.isRolling) return;
-    if (!this.isPlayerTurn) return;
-    if (this.turnFinished) return;
-    if (this.rollsLeft === 3) {
-      this.showMessage("⚠️ Сначала бросьте кубики!");
-      return;
-    }
-
-    const available = this.getAvailableCategories("player");
-    if (available.length === 0) {
-      this.showMessage("❌ Нет доступных категорий!");
-      return;
-    }
-
-    let bestCategory = available[0];
-    let bestScore = -1;
-
-    available.forEach((cat) => {
-      const score = this.calculateScore(cat.id, this.dice);
-      if (score > bestScore) {
-        bestScore = score;
-        bestCategory = cat.id;
-      }
-    });
-
-    if (bestScore === -1) {
-      bestCategory = available[0].id;
-      bestScore = 0;
-    }
-
-    this.applyCategory("player", bestCategory, bestScore);
-  }
-
-  // ===== ХОД БОТА =====
   botTurn() {
     if (this.gameOver) return;
 
     this.isPlayerTurn = false;
     this.isBotRolling = true;
-    this.showMessage("🤖 Бот бросает кубики...");
+    this.showMessage("🤖 Бот думает...");
 
     let botDice = [0, 0, 0, 0, 0];
     let botHeld = [false, false, false, false, false];
@@ -335,12 +459,11 @@ export class ArcadeYahtzee {
       this.dice = [...botDice];
       this.isBotRolling = true;
       this.render();
-
-      this.showMessage(`🤖 Бот бросает... (${rollIndex + 1}/3)`);
+      this.showMessage(`🤖 Бросает... (${rollIndex + 1}/3)`);
 
       setTimeout(() => {
         botRollStep(rollIndex + 1);
-      }, 600);
+      }, 500);
     };
 
     const finishBotTurn = (botDice) => {
@@ -370,7 +493,7 @@ export class ArcadeYahtzee {
         bestScore = 0;
       }
 
-      this.showMessage(`🤖 Бот выбрал "${bestCategory}" за ${bestScore} очков`);
+      this.showMessage(`🤖 +${bestScore} очков`);
 
       setTimeout(() => {
         this.applyCategory("bot", bestCategory, bestScore);
@@ -381,7 +504,6 @@ export class ArcadeYahtzee {
     setTimeout(() => botRollStep(0), 400);
   }
 
-  // ===== ПРОВЕРКА ОКОНЧАНИЯ =====
   checkGameOver() {
     if (this.player.used.length === 13 && this.bot.used.length === 13) {
       this.gameOver = true;
@@ -393,59 +515,35 @@ export class ArcadeYahtzee {
     return false;
   }
 
-  // ===== СОХРАНЕНИЕ РЕЗУЛЬТАТА =====
   saveScore() {
     const playerScore = this.player.points;
-    const botScore = this.bot.points;
-
-    let result = 0;
-    if (playerScore > botScore) {
-      result = 1; // Победа
-    } else if (botScore > playerScore) {
-      result = -1; // Поражение
-    } else {
-      result = 0; // Ничья
-    }
-
-    // Очки = количество очков игрока (для рейтинга)
-    const points = playerScore;
-
     setTimeout(() => {
       if (this.manager) {
-        this.manager.saveScore("yahtzee", points);
+        this.manager.saveScore("yahtzee", playerScore);
       }
     }, 500);
   }
 
-  // ===== СООБЩЕНИЯ =====
   showMessage(text) {
     const msgEl = document.getElementById("yahtzee-message");
     if (msgEl) msgEl.textContent = text;
-  }
-
-  // ===== УПРАВЛЕНИЕ КНОПКАМИ =====
-  updateControls() {
-    // Рендеринг обновляет кнопки
   }
 
   // ===== РЕНДЕРИНГ =====
   render() {
     if (!this.container) return;
 
-    const diceEmojis = this.DICE_EMOJIS;
-
-    // Счёт
     const playerTotal = this.player.points;
     const botTotal = this.bot.points;
+    const upperSum = this.getUpperSum("player");
 
-    // Индикатор хода
     let turnText = "";
     let turnColor = "#4f8cff";
     if (this.gameOver) {
       turnText = "🏁 Игра окончена!";
       turnColor = "#f59e0b";
     } else if (this.isBotRolling) {
-      turnText = "🤖 Бот бросает...";
+      turnText = "🤖 Ход бота...";
       turnColor = "#f59e0b";
     } else if (this.isPlayerTurn) {
       const used = this.player.used.length;
@@ -456,16 +554,7 @@ export class ArcadeYahtzee {
       turnColor = "#f59e0b";
     }
 
-    // Бонус трекер
-    const upperSum = this.getUpperSum("player");
-    const bonusText =
-      this.player.bonus > 0
-        ? "🎉 Бонус +35!"
-        : upperSum >= 63
-        ? "✅ Цель достигнута!"
-        : `❌ Нужно ещё ${63 - upperSum}`;
-
-    // Кубики
+    // ===== КУБИКИ С SVG =====
     const diceHtml = this.dice
       .map((value, i) => {
         const isHeld = this.held[i];
@@ -479,24 +568,25 @@ export class ArcadeYahtzee {
           !this.isBotRolling;
 
         return `
-        <div class="dice ${isHeld ? "held" : ""} ${
+        <div class="ydice ${isHeld ? "held" : ""} ${
           this.isBotRolling ? "bot-dice" : ""
         }"
              onclick="${
                canClick ? `window.app.arcadeManager.yahtzeeToggle(${i})` : ""
              }"
-             style="cursor: ${canClick ? "pointer" : "default"};
-                    ${this.isBotRolling ? "opacity: 0.7;" : ""}">
-          <span class="dice-value">${
-            value > 0 ? diceEmojis[value - 1] : "❓"
-          }</span>
-          ${isHeld ? '<span class="lock-icon">🔒</span>' : ""}
+             style="cursor: ${canClick ? "pointer" : "default"};">
+          ${
+            value > 0
+              ? this.getDiceSVG(value)
+              : '<span style="font-size: 28px;">❓</span>'
+          }
+          ${isHeld ? "" : ""}
         </div>
       `;
       })
       .join("");
 
-    // Категории
+    // ===== КАТЕГОРИИ =====
     const availableIds = this.getAvailableCategories("player").map((c) => c.id);
     const isPlayerTurnAndReady =
       this.isPlayerTurn &&
@@ -504,10 +594,11 @@ export class ArcadeYahtzee {
       !this.turnFinished &&
       !this.isBotRolling;
 
-    const renderCategoryRow = (cat) => {
+    const renderRow = (cat) => {
       const catId = cat.id;
       const isUsed = this.player.used.includes(catId);
       const isAvailable = availableIds.includes(catId);
+      const isUpper = this.UPPER_CATEGORIES.some((c) => c.id === catId);
 
       const playerScore = this.player.categories[catId];
       const botScore = this.bot.categories[catId];
@@ -515,249 +606,321 @@ export class ArcadeYahtzee {
       const playerScoreDisplay = playerScore !== undefined ? playerScore : "";
       const botScoreDisplay = botScore !== undefined ? botScore : "";
 
-      let currentScore = "";
-      let statusClass = "empty";
-      let statusText = "";
+      const isPending = this.pendingCategory === catId;
 
-      const hasDice = this.dice.some((d) => d > 0);
+      // ===== ДЛЯ ВЕРХНЕЙ СЕКЦИИ ИСПОЛЬЗУЕМ МАЛЕНЬКИЙ КУБИК =====
+      let iconHtml = cat.icon;
+      if (isUpper) {
+        // Превращаем '1' в число 1 и получаем SVG
+        const numValue = parseInt(cat.icon);
+        if (!isNaN(numValue) && numValue >= 1 && numValue <= 6) {
+          iconHtml = this.getSmallDiceSVG(numValue);
+        }
+      }
+
+      let playerContent = playerScoreDisplay || "";
+      let playerClass = "ycell-player";
 
       if (isUsed) {
-        statusClass = "used";
-        statusText = "✅";
+        playerClass += " used";
       } else if (
         isAvailable &&
         isPlayerTurnAndReady &&
-        hasDice &&
-        !this.turnFinished
+        this.rollsLeft < 3 &&
+        this.rollsLeft >= 0
       ) {
-        currentScore = this.calculateScore(catId, this.dice);
-        statusClass = "available";
-        statusText = `${currentScore}`;
-
-        const allScores = availableIds.map((id) => ({
-          id: id,
-          score: this.calculateScore(id, this.dice),
-        }));
-        const maxScore = Math.max(...allScores.map((s) => s.score));
-        if (currentScore === maxScore && currentScore > 0) {
-          statusClass = "best";
+        playerClass += " available";
+        if (isPending) {
+          playerClass += " pending";
+          playerContent = this.pendingScore !== null ? this.pendingScore : "?";
+        } else {
+          playerContent = "";
         }
-      } else if (isAvailable) {
-        statusClass = "available";
-        statusText = "⬜";
       } else {
-        statusClass = "used";
-        statusText = "🔒";
+        playerClass += " empty";
+        playerContent = "";
       }
 
-      const isBest = statusClass === "best";
-      const isHighlight =
-        isAvailable &&
-        isPlayerTurnAndReady &&
-        hasDice &&
-        !this.turnFinished &&
-        !isUsed;
-
-      const rowClass = `category-row ${isUsed ? "used-cat" : ""} ${
-        isBest ? "best-choice" : ""
-      } ${isHighlight ? "highlight" : ""} ${
-        isAvailable && !isUsed ? "available" : ""
-      }`;
+      let botContent = botScoreDisplay || "";
+      let botClass = "ycell-bot";
+      if (botScore !== undefined) {
+        botClass += " filled";
+      } else {
+        botClass += " empty";
+        botContent = "";
+      }
 
       const canClick =
-        isAvailable &&
         !isUsed &&
+        isAvailable &&
         isPlayerTurnAndReady &&
-        hasDice &&
-        !this.turnFinished &&
         this.rollsLeft < 3 &&
-        this.rollsLeft >= 0;
-
+        this.rollsLeft >= 0 &&
+        !this.isBotRolling;
       const onclick = canClick
-        ? `onclick="window.app.arcadeManager.yahtzeeChoose('${catId}')"`
+        ? `onclick="window.app.arcadeManager.yahtzeeClick('${catId}')"`
         : "";
 
-      const playerClass = playerScore !== undefined ? "" : "empty";
-      const botClass = botScore !== undefined ? "" : "empty";
-
       return `
-        <div class="${rowClass}" ${onclick} style="${
+    <div class="yrow" ${onclick} style="${
         canClick ? "cursor: pointer;" : "cursor: default;"
       }">
-          <span class="name">${cat.label}</span>
-          <span class="bot-score ${botClass}">${
-        botScoreDisplay !== "" ? botScoreDisplay : "—"
-      }</span>
-          <span class="player-score ${playerClass}">${
-        playerScoreDisplay !== "" ? playerScoreDisplay : "—"
-      }</span>
-          <span class="status ${statusClass}">${statusText}</span>
-        </div>
-      `;
+      <div class="ycell-icon">${iconHtml}</div>
+      <div class="${botClass}">${botContent}</div>
+      <div class="${playerClass}">${playerContent}</div>
+    </div>
+  `;
     };
 
-    const upperHtml = this.UPPER_CATEGORIES.map((c) =>
-      renderCategoryRow(c)
-    ).join("");
-    const lowerHtml = this.LOWER_CATEGORIES.map((c) =>
-      renderCategoryRow(c)
-    ).join("");
+    let upperRows = "";
+    this.UPPER_CATEGORIES.forEach((cat) => {
+      upperRows += renderRow(cat);
+    });
+
+    let lowerRows = "";
+    this.LOWER_CATEGORIES.forEach((cat) => {
+      lowerRows += renderRow(cat);
+    });
 
     // Кнопки
     let rollBtnHtml = "";
-    let finishBtnHtml = "";
+    let playBtnHtml = "";
+    let closeBtnHtml = "";
+
+    const hasPending =
+      this.pendingCategory !== null && this.pendingScore !== null;
 
     if (this.gameOver) {
-      rollBtnHtml = `<button class="btn btn-success" onclick="window.app.arcadeManager.startGame('yahtzee')">🔄 Новая игра</button>`;
-      finishBtnHtml = "";
+      rollBtnHtml = `<button class="ybtn ybtn-success" onclick="window.app.arcadeManager.startGame('yahtzee')">🔄 Сыграть ещё</button>`;
+      closeBtnHtml = `<button class="ybtn ybtn-secondary" onclick="window.app.arcadeManager.closeGame()">🏠 В меню</button>`;
     } else if (this.isBotRolling || !this.isPlayerTurn) {
-      rollBtnHtml = `<button class="btn btn-secondary" disabled>${
-        this.isBotRolling ? "🤖 Бот бросает..." : "🤖 Ход бота..."
+      rollBtnHtml = `<button class="ybtn ybtn-secondary" disabled>${
+        this.isBotRolling ? "🤖 Бросает..." : "🤖 Ход бота..."
       }</button>`;
-      finishBtnHtml = "";
     } else if (this.turnFinished) {
-      rollBtnHtml = `<button class="btn btn-secondary" disabled>⏳ Ожидание...</button>`;
-      finishBtnHtml = "";
+      rollBtnHtml = `<button class="ybtn ybtn-secondary" disabled>⏳ Ожидание...</button>`;
     } else if (this.rollsLeft === 0) {
-      rollBtnHtml = `<button class="btn btn-secondary" disabled>🎯 Выберите категорию</button>`;
-      finishBtnHtml = `<button class="btn btn-warning" onclick="window.app.arcadeManager.yahtzeeFinish()">✅ Закончить ход (авто)</button>`;
+      rollBtnHtml = `<button class="ybtn ybtn-secondary" disabled>🎯 Выберите категорию</button>`;
+      if (hasPending) {
+        playBtnHtml = `<button class="ybtn ybtn-success" onclick="window.app.arcadeManager.yahtzeePlay()">✅ Играть (${this.pendingScore})</button>`;
+      }
     } else if (this.rollsLeft === 3) {
-      rollBtnHtml = `<button class="btn btn-primary" onclick="window.app.arcadeManager.yahtzeeRoll()">🎲 Бросить (3)</button>`;
-      finishBtnHtml = "";
+      rollBtnHtml = `<button class="ybtn ybtn-primary" onclick="window.app.arcadeManager.yahtzeeRoll()">🎲 Бросить (3)</button>`;
     } else {
-      rollBtnHtml = `<button class="btn btn-primary" onclick="window.app.arcadeManager.yahtzeeRoll()">🎲 Бросить (${this.rollsLeft})</button>`;
-      finishBtnHtml = `<button class="btn btn-warning" onclick="window.app.arcadeManager.yahtzeeFinish()">✅ Закончить ход (авто)</button>`;
+      rollBtnHtml = `<button class="ybtn ybtn-primary" onclick="window.app.arcadeManager.yahtzeeRoll()">🎲 Бросить (${this.rollsLeft})</button>`;
+      if (hasPending) {
+        playBtnHtml = `<button class="ybtn ybtn-success" onclick="window.app.arcadeManager.yahtzeePlay()">✅ Играть (${this.pendingScore})</button>`;
+      }
     }
 
     this.container.innerHTML = `
-      <div class="yahtzee-game">
+      <div class="yahtzee-wrap">
         <style>
-          .yahtzee-game .score-header {
+          .yahtzee-wrap {
+            max-width: 550px;
+            margin: 0 auto;
+            padding: 8px;
+            font-family: 'Segoe UI', sans-serif;
+          }
+
+          .yahtzee-wrap .yclose {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 22px;
+            cursor: pointer;
+            float: right;
+            padding: 0 6px;
+          }
+          .yahtzee-wrap .yclose:hover { color: #ef4444; }
+
+          .yahtzee-wrap .yscore {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 40px;
-            padding: 12px 20px;
-            background: #22223a;
+            gap: 20px;
+            padding: 8px 12px;
+            background: #1a1a2e;
             border-radius: 12px;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
+            clear: both;
+            border: 1px solid #2a2a4a;
           }
-          .yahtzee-game .score-header .score-block {
+          .yahtzee-wrap .yscore .yscore-block {
             display: flex;
             flex-direction: column;
             align-items: center;
           }
-          .yahtzee-game .score-header .score-block .label {
-            font-size: 12px;
+          .yahtzee-wrap .yscore .yscore-block .yscore-label {
+            font-size: 10px;
             color: #94a3b8;
           }
-          .yahtzee-game .score-header .score-block .value {
-            font-size: 28px;
-            font-weight: bold;
-            line-height: 1.2;
+          .yahtzee-wrap .yscore .yscore-block .yscore-value {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1.1;
           }
-          .yahtzee-game .score-header .player-block .value { color: #4f8cff; }
-          .yahtzee-game .score-header .bot-block .value { color: #f59e0b; }
-          .yahtzee-game .score-header .vs {
-            font-size: 18px;
+          .yahtzee-wrap .yscore .yscore-player .yscore-value { color: #4f8cff; }
+          .yahtzee-wrap .yscore .yscore-bot .yscore-value { color: #f59e0b; }
+          .yahtzee-wrap .yscore .yscore-vs {
+            font-size: 16px;
             color: #4a4a6a;
             font-weight: bold;
           }
 
-          .yahtzee-game .bonus-tracker {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 12px;
-            padding: 4px 12px;
+          .yahtzee-wrap .ybonus {
+            text-align: center;
+            padding: 2px 8px;
             background: #1a1a2e;
             border-radius: 6px;
-            margin-bottom: 8px;
-            font-size: 12px;
+            margin-bottom: 4px;
+            font-size: 11px;
             color: #94a3b8;
             border: 1px solid #2a2a4a;
           }
-          .yahtzee-game .bonus-tracker .sum { color: #e2e8f0; font-weight: bold; }
-          .yahtzee-game .bonus-tracker .sum.achieved { color: #22c55e; }
-          .yahtzee-game .bonus-tracker .bonus-status.achieved { color: #22c55e; }
-          .yahtzee-game .bonus-tracker .bonus-status.not-achieved { color: #4a4a6a; }
+          .yahtzee-wrap .ybonus .ybonus-sum { color: #e2e8f0; font-weight: bold; }
+          .yahtzee-wrap .ybonus .ybonus-sum.achieved { color: #22c55e; }
+          .yahtzee-wrap .ybonus .ybonus-status.achieved { color: #22c55e; }
 
-          .yahtzee-game .turn-indicator {
+          .yahtzee-wrap .yturn {
             text-align: center;
-            padding: 6px;
-            margin-bottom: 8px;
+            padding: 4px;
+            margin-bottom: 6px;
             font-size: 14px;
             font-weight: 600;
-            border-radius: 6px;
+            border-radius: 8px;
             background: #1a1a2e;
             border: 2px solid #4f8cff;
           }
-          .yahtzee-game .turn-indicator.bot-turn { border-color: #f59e0b; }
+          .yahtzee-wrap .yturn.yturn-bot { border-color: #f59e0b; }
 
-          .yahtzee-game .table-wrapper {
+          .yahtzee-wrap .ytable-wrapper {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin: 6px 0;
+            gap: 6px;
+            margin: 4px 0;
           }
-          .yahtzee-game .table-column {
+
+          .yahtzee-wrap .ytable-col {
             background: #1a1a2e;
             border-radius: 8px;
             padding: 4px;
-          }
-          .yahtzee-game .table-column .col-title {
-            text-align: center;
-            font-size: 11px;
-            color: #94a3b8;
-            padding: 3px;
-            border-bottom: 1px solid #2a2a4a;
-            margin-bottom: 3px;
-          }
-          .yahtzee-game .category-row {
-            display: grid;
-            grid-template-columns: 1.6fr 0.7fr 0.7fr 0.6fr;
-            gap: 2px;
-            padding: 3px 6px;
-            background: #22223a;
-            border-radius: 4px;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 11px;
-            margin-bottom: 2px;
-          }
-          .yahtzee-game .category-row:hover { background: #2a2a4a; }
-          .yahtzee-game .category-row .name { color: #e2e8f0; font-weight: 500; font-size: 11px; }
-          .yahtzee-game .category-row .bot-score { text-align: center; color: #f59e0b; font-weight: 600; font-size: 12px; }
-          .yahtzee-game .category-row .bot-score.empty { color: #3a3a5a; }
-          .yahtzee-game .category-row .player-score { text-align: center; color: #4f8cff; font-weight: 600; font-size: 12px; }
-          .yahtzee-game .category-row .player-score.empty { color: #3a3a5a; }
-          .yahtzee-game .category-row .status { text-align: center; font-size: 10px; font-weight: 600; }
-          .yahtzee-game .category-row .status.available { color: #22c55e; }
-          .yahtzee-game .category-row .status.used { color: #3a3a5a; }
-          .yahtzee-game .category-row .status.best { color: #f59e0b; animation: pulse 1s infinite; }
-          .yahtzee-game .category-row.available:hover {
-            background: #2a3a5a;
-            border: 1px solid #4f8cff;
-            margin: -1px;
-            margin-bottom: 1px;
-          }
-          .yahtzee-game .category-row.used-cat { opacity: 0.4; cursor: default; }
-          .yahtzee-game .category-row.used-cat:hover { transform: none; background: #22223a; }
-          .yahtzee-game .category-row.best-choice {
-            border: 2px solid #f59e0b;
-            margin: -1px;
-            margin-bottom: 1px;
-            background: rgba(245, 158, 11, 0.1);
-          }
-          .yahtzee-game .category-row.highlight {
-            border: 2px solid #4f8cff;
-            margin: -1px;
-            margin-bottom: 1px;
-            background: rgba(79, 140, 255, 0.08);
+            border: 1px solid #2a2a4a;
           }
 
-          .yahtzee-game .dice-container {
+          .yahtzee-wrap .yheader {
+            display: grid;
+            grid-template-columns: 36px 1fr 1fr;
+            gap: 3px;
+            padding: 2px 4px;
+            font-size: 10px;
+            color: #94a3b8;
+            text-align: center;
+            border-bottom: 1px solid #2a2a4a;
+            margin-bottom: 2px;
+          }
+          .yahtzee-wrap .yheader .yh-icon { text-align: left; padding-left: 6px; }
+          .yahtzee-wrap .yheader .yh-bot { color: #f59e0b; }
+          .yahtzee-wrap .yheader .yh-player { color: #4f8cff; }
+
+          .yahtzee-wrap .yrow {
+            display: grid;
+            grid-template-columns: 36px 1fr 1fr;
+            gap: 3px;
+            padding: 2px 4px;
+            align-items: center;
+            border-radius: 4px;
+            min-height: 30px;
+          }
+          .yahtzee-wrap .yrow:hover {
+            background: #22223a;
+          }
+
+          .yahtzee-wrap .ycell-icon {
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            color: #e2e8f0;
+            padding: 2px 0;
+            min-height: 30px;
+            min-width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          /* SVG внутри иконки */
+          .yahtzee-wrap .ycell-icon svg {
+            width: 28px;
+            height: 28px;
+            display: block;
+          }
+
+          .yahtzee-wrap .ycell-bot {
+            background: #1a1a2e;
+            border: 2px solid #2a2a4a;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 600;
+            color: #f59e0b;
+            padding: 3px 2px;
+            min-height: 30px;
+            min-width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+          }
+          .yahtzee-wrap .ycell-bot.filled {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: #f59e0b;
+          }
+          .yahtzee-wrap .ycell-bot.empty {
+            color: #3a3a5a;
+            border-color: #2a2a4a;
+          }
+
+          .yahtzee-wrap .ycell-player {
+            background: #1a1a2e;
+            border: 2px solid #2a2a4a;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 600;
+            color: #4f8cff;
+            padding: 3px 2px;
+            min-height: 30px;
+            min-width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+          }
+          .yahtzee-wrap .ycell-player.used {
+            background: rgba(79, 140, 255, 0.08);
+            border-color: #4f8cff;
+          }
+          .yahtzee-wrap .ycell-player.available {
+            border-color: #2a4a6a;
+            cursor: pointer;
+          }
+          .yahtzee-wrap .ycell-player.available:hover {
+            border-color: #4f8cff;
+            background: rgba(79, 140, 255, 0.05);
+          }
+          .yahtzee-wrap .ycell-player.pending {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+          }
+          .yahtzee-wrap .ycell-player.empty {
+            color: #3a3a5a;
+            border-color: #2a2a4a;
+          }
+
+          /* ===== КУБИКИ ===== */
+          .yahtzee-wrap .ydice-container {
             display: flex;
             justify-content: center;
             gap: 12px;
@@ -765,71 +928,82 @@ export class ArcadeYahtzee {
             background: #1a1a2e;
             border-radius: 10px;
             margin: 6px 0;
+            border: 1px solid #2a2a4a;
           }
-          .yahtzee-game .dice {
-            width: 60px;
-            height: 60px;
+          .yahtzee-wrap .ydice {
+            width: 68px;
+            height: 68px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
-            background: #2a2a4a;
-            border: 3px solid #3a3a5a;
+            background: transparent;
             border-radius: 10px;
-            cursor: pointer;
+            cursor: default;
             transition: all 0.3s ease;
             user-select: none;
             position: relative;
           }
-          .yahtzee-game .dice:hover { transform: scale(1.05); border-color: #4f8cff; }
-          .yahtzee-game .dice.held {
-            border-color: #4f8cff;
-            background: rgba(79, 140, 255, 0.15);
-            box-shadow: 0 0 20px rgba(79, 140, 255, 0.2);
+          .yahtzee-wrap .ydice svg {
+            width: 100%;
+            height: 100%;
+            max-width: 60px;
+            max-height: 60px;
           }
-          .yahtzee-game .dice.bot-dice { opacity: 0.6; cursor: default; }
-          .yahtzee-game .dice.bot-dice:hover { transform: none; }
-          .yahtzee-game .dice .lock-icon {
+          .yahtzee-wrap .ydice:hover svg {
+            transform: scale(1.04);
+          }
+          .yahtzee-wrap .ydice.held svg {
+            filter: drop-shadow(0 0 15px rgba(79, 140, 255, 0.4));
+          }
+          .yahtzee-wrap .ydice.held {
+            border: 3px solid #22c55e;
+            border-radius: 12px;
+            background: rgba(34, 197, 94, 0.08);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+          }
+          .yahtzee-wrap .ydice.bot-dice { opacity: 0.5; cursor: default; }
+          .yahtzee-wrap .ydice.bot-dice:hover { transform: none; }
+          .yahtzee-wrap .ydice .ydice-lock {
             position: absolute;
             bottom: 2px;
             right: 4px;
-            font-size: 10px;
+            font-size: 12px;
+            color: #4f8cff;
           }
 
-          .yahtzee-game .controls {
+          .yahtzee-wrap .ycontrols {
             text-align: center;
             margin: 6px 0;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
           }
-          .yahtzee-game .controls .btn {
+          .yahtzee-wrap .ybtn {
             padding: 8px 20px;
             font-size: 13px;
             font-weight: 600;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
           }
-          .yahtzee-game .controls .btn-primary { background: #4f8cff; color: white; }
-          .yahtzee-game .controls .btn-primary:hover { background: #3a7aee; transform: translateY(-2px); }
-          .yahtzee-game .controls .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-          .yahtzee-game .controls .btn-success { background: #22c55e; color: white; }
-          .yahtzee-game .controls .btn-success:hover { background: #16a34a; }
-          .yahtzee-game .controls .btn-secondary { background: #3a3a5a; color: #e2e8f0; }
-          .yahtzee-game .controls .btn-secondary:hover { background: #4a4a6a; }
-          .yahtzee-game .controls .btn-warning { background: #f59e0b; color: #0a0e1a; }
-          .yahtzee-game .controls .btn-warning:hover { background: #d97706; }
-          .yahtzee-game .controls .hint {
+          .yahtzee-wrap .ybtn-primary { background: #4f8cff; color: white; }
+          .yahtzee-wrap .ybtn-primary:hover { background: #3a7aee; transform: translateY(-2px); }
+          .yahtzee-wrap .ybtn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+          .yahtzee-wrap .ybtn-success { background: #22c55e; color: white; }
+          .yahtzee-wrap .ybtn-success:hover { background: #16a34a; }
+          .yahtzee-wrap .ybtn-secondary { background: #3a3a5a; color: #e2e8f0; }
+          .yahtzee-wrap .ybtn-secondary:hover { background: #4a4a6a; }
+
+          .yahtzee-wrap .yhint {
             color: #94a3b8;
-            font-size: 11px;
+            font-size: 10px;
             display: flex;
             align-items: center;
           }
 
-          .yahtzee-game .message {
+          .yahtzee-wrap .ymsg {
             text-align: center;
             padding: 4px;
             color: #94a3b8;
@@ -837,140 +1011,141 @@ export class ArcadeYahtzee {
             min-height: 20px;
           }
 
-          .yahtzee-game .game-over {
+          .yahtzee-wrap .yover {
             text-align: center;
-            padding: 15px;
+            padding: 14px;
             background: #1a1a2e;
             border-radius: 10px;
-            margin: 8px 0;
+            margin: 6px 0;
             border: 2px solid #f59e0b;
           }
-          .yahtzee-game .game-over h2 { font-size: 24px; margin-bottom: 10px; }
-          .yahtzee-game .game-over .final-scores {
+          .yahtzee-wrap .yover h2 { font-size: 22px; margin-bottom: 8px; }
+          .yahtzee-wrap .yover .yover-scores {
             display: flex;
             justify-content: center;
-            gap: 30px;
-            margin: 10px 0;
+            gap: 24px;
+            margin: 8px 0;
           }
-          .yahtzee-game .game-over .final-scores div { text-align: center; }
-          .yahtzee-game .game-over .final-scores .label { color: #94a3b8; font-size: 12px; }
-          .yahtzee-game .game-over .final-scores .value { font-size: 26px; font-weight: bold; }
-          .yahtzee-game .game-over .actions {
+          .yahtzee-wrap .yover .yover-scores div { text-align: center; }
+          .yahtzee-wrap .yover .yover-scores .label { color: #94a3b8; font-size: 11px; }
+          .yahtzee-wrap .yover .yover-scores .value { font-size: 24px; font-weight: bold; }
+          .yahtzee-wrap .yover .yover-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             justify-content: center;
-            margin-top: 12px;
+            margin-top: 10px;
           }
 
-          @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+          @media (max-width: 600px) {
+            .yahtzee-wrap { padding: 4px; }
+            .yahtzee-wrap .ytable-wrapper { grid-template-columns: 1fr 1fr; gap: 4px; }
+            .yahtzee-wrap .ydice { width: 58px; height: 58px; }
+            .yahtzee-wrap .ydice svg { max-width: 50px; max-height: 50px; }
+            .yahtzee-wrap .ydice-container { gap: 8px; padding: 10px; }
+            .yahtzee-wrap .yscore .yscore-block .yscore-value { font-size: 26px; }
+            .yahtzee-wrap .yscore { gap: 14px; padding: 6px 10px; }
+            .yahtzee-wrap .yrow { grid-template-columns: 30px 1fr 1fr; min-height: 26px; gap: 2px; padding: 1px 3px; }
+            .yahtzee-wrap .ycell-icon { font-size: 14px; min-height: 26px; }
+            .yahtzee-wrap .ycell-bot { font-size: 13px; min-height: 26px; min-width: 26px; padding: 2px; }
+            .yahtzee-wrap .ycell-player { font-size: 13px; min-height: 26px; min-width: 26px; padding: 2px; }
+            .yahtzee-wrap .yheader { grid-template-columns: 30px 1fr 1fr; font-size: 9px; }
+            .yahtzee-wrap .ybtn { padding: 6px 14px; font-size: 12px; }
+            .yahtzee-wrap .yturn { font-size: 12px; padding: 3px; }
+            .yahtzee-wrap .ybonus { font-size: 10px; }
           }
 
-          @media (max-width: 650px) {
-            .yahtzee-game .table-wrapper { grid-template-columns: 1fr; gap: 4px; }
-            .yahtzee-game .dice { width: 48px; height: 48px; font-size: 24px; }
-            .yahtzee-game .dice-container { gap: 8px; padding: 10px; }
-            .yahtzee-game .category-row { font-size: 10px; padding: 2px 4px; grid-template-columns: 1.4fr 0.6fr 0.6fr 0.6fr; }
-            .yahtzee-game .score-header { gap: 20px; padding: 8px 12px; }
-            .yahtzee-game .score-header .score-block .value { font-size: 22px; }
-            .yahtzee-game .controls .btn { padding: 6px 14px; font-size: 12px; }
-          }
           @media (max-width: 400px) {
-            .yahtzee-game .dice { width: 38px; height: 38px; font-size: 18px; }
-            .yahtzee-game .dice-container { gap: 5px; padding: 8px; }
-            .yahtzee-game .category-row { font-size: 9px; grid-template-columns: 1.2fr 0.5fr 0.5fr 0.5fr; }
+            .yahtzee-wrap .ytable-wrapper { grid-template-columns: 1fr 1fr; gap: 3px; }
+            .yahtzee-wrap .ydice { width: 48px; height: 48px; }
+            .yahtzee-wrap .ydice svg { max-width: 42px; max-height: 42px; }
+            .yahtzee-wrap .ydice-container { gap: 5px; padding: 8px; }
+            .yahtzee-wrap .yscore .yscore-block .yscore-value { font-size: 20px; }
+            .yahtzee-wrap .yscore { gap: 10px; padding: 4px 8px; }
+            .yahtzee-wrap .yrow { grid-template-columns: 24px 1fr 1fr; min-height: 22px; }
+            .yahtzee-wrap .ycell-icon { font-size: 12px; min-height: 22px; }
+            .yahtzee-wrap .ycell-bot { font-size: 11px; min-height: 22px; min-width: 22px; }
+            .yahtzee-wrap .ycell-player { font-size: 11px; min-height: 22px; min-width: 22px; }
+            .yahtzee-wrap .yheader { grid-template-columns: 24px 1fr 1fr; font-size: 8px; }
+            .yahtzee-wrap .ybtn { padding: 4px 10px; font-size: 11px; }
           }
-
-          .yahtzee-game .close-btn {
-            background: transparent;
-            border: none;
-            color: #94a3b8;
-            font-size: 20px;
-            cursor: pointer;
-            padding: 4px 8px;
-          }
-          .yahtzee-game .close-btn:hover { color: #ef4444; }
         </style>
 
-        <!-- Закрыть -->
-        <div style="display: flex; justify-content: flex-end;">
-          <button class="close-btn" onclick="window.app.arcadeManager.closeGame()">✕</button>
-        </div>
+        <button class="yclose" onclick="window.app.arcadeManager.closeGame()">✕</button>
 
-        <!-- Счёт -->
-        <div class="score-header">
-          <div class="score-block player-block">
-            <div class="label">👤 Игрок</div>
-            <div class="value">${playerTotal}</div>
+        <div class="yscore">
+          <div class="yscore-block yscore-player">
+            <div class="yscore-label">👤 Игрок</div>
+            <div class="yscore-value">${playerTotal}</div>
           </div>
-          <div class="vs">⚔️</div>
-          <div class="score-block bot-block">
-            <div class="label">🤖 Бот</div>
-            <div class="value">${botTotal}</div>
+          <div class="yscore-vs">⚔️</div>
+          <div class="yscore-block yscore-bot">
+            <div class="yscore-label">🤖 Бот</div>
+            <div class="yscore-value">${botTotal}</div>
           </div>
         </div>
 
-        <!-- Бонус трекер -->
-        <div class="bonus-tracker">
-          <span>📊 Верхняя секция:</span>
-          <span class="sum ${
+        <div class="ybonus">
+          <span>📊 Верхняя: </span>
+          <span class="ybonus-sum ${
             upperSum >= 63 ? "achieved" : ""
           }">${upperSum}</span>
           <span>/ 63</span>
           <span>|</span>
-          <span class="bonus-status ${
-            this.player.bonus > 0 || upperSum >= 63
-              ? "achieved"
-              : "not-achieved"
+          <span class="ybonus-status ${
+            this.player.bonus > 0 || upperSum >= 63 ? "achieved" : ""
           }">
             ${
               this.player.bonus > 0
-                ? "🎉 Бонус +35!"
+                ? "🎉 +35!"
                 : upperSum >= 63
-                ? "✅ Цель достигнута!"
-                : `❌ Нужно ещё ${63 - upperSum}`
+                ? "✅ Бонус!"
+                : `❌ ${63 - upperSum}`
             }
           </span>
         </div>
 
-        <!-- Индикатор хода -->
-        <div class="turn-indicator ${
-          this.isBotRolling || !this.isPlayerTurn ? "bot-turn" : ""
+        <div class="yturn ${
+          this.isBotRolling || !this.isPlayerTurn ? "yturn-bot" : ""
         }" style="border-color: ${turnColor};">
           ${turnText}
         </div>
 
-        <!-- Таблица -->
-        <div class="table-wrapper">
-          <div class="table-column">
-            <div class="col-title">📊 Верхняя секция</div>
-            ${upperHtml}
+        <div class="ytable-wrapper">
+          <div class="ytable-col">
+            <div class="yheader">
+              <span class="yh-icon">🎯</span>
+              <span class="yh-bot">🤖</span>
+              <span class="yh-player">👤</span>
+            </div>
+            ${upperRows}
           </div>
-          <div class="table-column">
-            <div class="col-title">🎯 Нижняя секция</div>
-            ${lowerHtml}
+          <div class="ytable-col">
+            <div class="yheader">
+              <span class="yh-icon">🎯</span>
+              <span class="yh-bot">🤖</span>
+              <span class="yh-player">👤</span>
+            </div>
+            ${lowerRows}
           </div>
         </div>
 
-        <!-- Кубики -->
-        <div class="dice-container">
+        <div class="ydice-container">
           ${diceHtml}
         </div>
 
-        <!-- Управление -->
-        <div class="controls">
+        <div class="ycontrols">
           ${rollBtnHtml}
-          ${finishBtnHtml}
-          <span class="hint">💡 Кликните на кубик чтобы зафиксировать</span>
+          ${playBtnHtml}
+          ${closeBtnHtml}
+    
         </div>
 
-        <div id="yahtzee-message" class="message">
+        <div id="yahtzee-message" class="ymsg">
           ${
             this.gameOver
               ? "🏁 Игра окончена!"
               : this.isPlayerTurn
-              ? '🎯 Нажмите "Бросить" чтобы начать'
+              ? '🎯 Нажмите "Бросить"'
               : "🤖 Ход бота..."
           }
         </div>
@@ -978,7 +1153,7 @@ export class ArcadeYahtzee {
         ${
           this.gameOver
             ? `
-          <div class="game-over">
+          <div class="yover">
             <h2>${
               playerTotal > botTotal
                 ? "🎉 Вы победили!"
@@ -986,13 +1161,13 @@ export class ArcadeYahtzee {
                 ? "😢 Бот победил"
                 : "🤝 Ничья"
             }</h2>
-            <div class="final-scores">
+            <div class="yover-scores">
               <div><div class="label">👤 Вы</div><div class="value" style="color: #4f8cff;">${playerTotal}</div></div>
               <div><div class="label">🤖 Бот</div><div class="value" style="color: #f59e0b;">${botTotal}</div></div>
             </div>
-            <div class="actions">
-              <button class="btn btn-primary" onclick="window.app.arcadeManager.startGame('yahtzee')">🔄 Сыграть ещё</button>
-              <button class="btn btn-secondary" onclick="window.app.arcadeManager.closeGame()">🏠 В меню</button>
+            <div class="yover-actions">
+              ${rollBtnHtml}
+              ${closeBtnHtml}
             </div>
           </div>
         `
