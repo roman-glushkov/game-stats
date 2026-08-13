@@ -284,34 +284,30 @@ export class ArcadeMemory {
     const playerScore = this.playerScore;
 
     this.container.innerHTML = `
-      <div class="arcade-game-over">
-        <div class="arcade-game-over-content">
-          <h2>${emoji} ${message}</h2>
-          <div class="arcade-game-over-stats">
-            <div class="stat"><span class="label">👤 Вы</span><span class="value">${this.playerScore}</span></div>
-            <div class="stat"><span class="label">🤖 Бот</span><span class="value">${this.botScore}</span></div>
-            <div class="stat"><span class="label">🔄 Ходов</span><span class="value">${this.moves}</span></div>
-            <div class="stat"><span class="label">⏱️ Время</span><span class="value">${this.timer}с</span></div>
-            <div class="stat highlight" style="grid-column: span 2;">
-              <span class="label">⭐ Заработано очков</span>
-              <span class="value">${playerScore}</span>
-            </div>
-          </div>
-          <div class="arcade-game-over-actions">
-            <button class="btn btn-primary" onclick="window.app.arcadeManager.startGame('memory')">🔄 Сыграть ещё</button>
-            <button class="btn btn-secondary" onclick="window.app.arcadeManager.closeGame()">🏠 В меню</button>
+    <div class="arcade-game-over">
+      <div class="arcade-game-over-content">
+        <h2>${emoji} ${message}</h2>
+        <div class="arcade-game-over-stats">
+          <div class="stat"><span class="label">👤 Вы</span><span class="value">${this.playerScore}</span></div>
+          <div class="stat"><span class="label">🤖 Бот</span><span class="value">${this.botScore}</span></div>
+          <div class="stat"><span class="label">🔄 Ходов</span><span class="value">${this.moves}</span></div>
+          <div class="stat"><span class="label">⏱️ Время</span><span class="value">${this.timer}с</span></div>
+          <div class="stat highlight" style="grid-column: span 2;">
+            <span class="label">⭐ Заработано очков</span>
+            <span class="value">${playerScore}</span>
           </div>
         </div>
+        <div class="arcade-game-over-actions">
+          <button class="btn btn-primary" onclick="window.app.arcadeManager.startGame('memory')">🔄 Сыграть ещё</button>
+          <button class="btn btn-secondary" onclick="window.app.arcadeManager.closeGame()">🏠 В меню</button>
+        </div>
       </div>
-    `;
+    </div>
+  `;
 
     setTimeout(() => {
       if (this.manager) {
         this.manager.saveScore("memory", playerScore);
-      } else {
-        const player = window.app?.currentUser || "Гость";
-        window.app?.dataManager?.saveArcadeScore("memory", playerScore, player);
-        window.app?.arcadeManager?.renderLeaderboard();
       }
     }, 500);
   }

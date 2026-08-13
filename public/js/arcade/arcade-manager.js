@@ -94,12 +94,30 @@ export class ArcadeManager {
   }
 
   startGame(gameId) {
+    // Проверка авторизации перед запуском игры
     if (!window.app?.isLoggedIn) {
       alert("⚠️ Для игры в аркады необходимо войти в систему");
       return;
     }
 
-    if (this.arcadeActive) return;
+    // Если игра уже активна - закрываем её и запускаем новую
+    if (this.arcadeActive) {
+      // Закрываем текущую игру
+      this.arcadeActive = false;
+      this.arcadeGame = null;
+      this.gameType = null;
+
+      // Очищаем контейнер
+      const container = document.getElementById("arcadeGameContainer");
+      if (container) {
+        container.innerHTML = "";
+        container.style.display = "none";
+      }
+
+      // Показываем сетку игр
+      const grid = document.getElementById("arcadeGrid");
+      if (grid) grid.style.display = "grid";
+    }
 
     this.arcadeActive = true;
     this.gameType = gameId;
@@ -157,6 +175,21 @@ export class ArcadeManager {
     }
   }
 
+  yahtzeeClick(category) {
+    if (
+      this.arcadeGame &&
+      typeof this.arcadeGame.clickPlayerCell === "function"
+    ) {
+      this.arcadeGame.clickPlayerCell(category);
+    }
+  }
+
+  yahtzeePlay() {
+    if (this.arcadeGame && typeof this.arcadeGame.confirmPlay === "function") {
+      this.arcadeGame.confirmPlay();
+    }
+  }
+
   yahtzeeChoose(category) {
     if (
       this.arcadeGame &&
@@ -172,35 +205,19 @@ export class ArcadeManager {
     }
   }
 
-  yahtzeeSelect(category) {
-    if (
-      this.arcadeGame &&
-      typeof this.arcadeGame.selectCategory === "function"
-    ) {
-      this.arcadeGame.selectCategory(category);
-    }
-  }
-  yahtzeeClick(category) {
-    if (
-      this.arcadeGame &&
-      typeof this.arcadeGame.clickPlayerCell === "function"
-    ) {
-      this.arcadeGame.clickPlayerCell(category);
-    }
-  }
-
-  yahtzeePlay() {
-    if (this.arcadeGame && typeof this.arcadeGame.confirmPlay === "function") {
-      this.arcadeGame.confirmPlay();
-    }
-  }
-  leaderboardSwitch(gameId) {
-    this.leaderboard.switchGame(gameId);
-  }
-
-  saveScore(gameId, score) {
+  async saveScore(gameId, score) {
     const player = window.app?.currentUser || "Гость";
-    this.storageManager.saveArcadeScore(gameId, score, player);
+
+    // Сначала загружаем свежие данные
+    await this.storageManager.refreshArcadeData();
+
+    // Сохраняем очки
+    await this.storageManager.saveArcadeScore(gameId, score, player);
+
+    // Обновляем только аркадные данные на сервере
+    await this.storageManager.saveArcadeOnly();
+
+    // Обновляем отображение
     this.renderLeaderboard();
   }
 
@@ -232,5 +249,9 @@ export class ArcadeManager {
       console.error("Ошибка удаления:", error);
       alert("❌ Ошибка при удалении рекордов");
     }
+  }
+
+  leaderboardSwitch(gameId) {
+    this.leaderboard.switchGame(gameId);
   }
 }

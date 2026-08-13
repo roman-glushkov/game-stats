@@ -21,11 +21,15 @@ export class StorageArcade {
   async saveArcadeScore(gameId, score, player = null) {
     if (!player) player = this.storageManager.currentUser || "Гость";
 
+    // Сначала загружаем свежие данные
+    await this.storageManager.refreshArcadeData();
+
     const arcade = this.getArcadeData();
     if (!arcade[gameId]) {
       arcade[gameId] = { records: [], gamesPlayed: 0 };
     }
 
+    // Находим запись игрока
     const existingIndex = arcade[gameId].records.findIndex(
       (r) => r.player === player
     );
@@ -52,12 +56,13 @@ export class StorageArcade {
       });
     }
 
+    // Сортируем
     arcade[gameId].records.sort((a, b) => b.totalScore - a.totalScore);
     arcade[gameId].records = arcade[gameId].records.slice(0, 20);
     arcade[gameId].gamesPlayed = (arcade[gameId].gamesPlayed || 0) + 1;
 
     this.storageManager.data.arcade = arcade;
-    await this.storageManager.saveData();
+    await this.storageManager.saveArcadeOnly();
     return true;
   }
 }
