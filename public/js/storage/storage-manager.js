@@ -206,6 +206,18 @@ export class StorageManager {
     return this.arcade.saveArcadeScore(gameId, score, player);
   }
 
+  async updateUser(login, newData) {
+    return this.auth.updateUser(login, newData);
+  }
+
+  getUserData(login) {
+    return this.auth.getUserData(login);
+  }
+
+  async registerUser(login, password, displayName) {
+    return this.auth.addUser(login, password, displayName, "user");
+  }
+
   exportData() {
     return JSON.stringify(this.data, null, 2);
   }

@@ -31,7 +31,6 @@ class App {
   async init() {
     await this.storageManager.loadData();
 
-    // Передаём ссылку на app в auth
     this.auth.setApp(this);
     this.auth.checkSession();
 
@@ -201,7 +200,7 @@ class App {
         (user) => `
       <div class="user-list-item">
         <div class="user-list-info">
-          <div class="user-list-name">${user.login}</div>
+          <div class="user-list-name">${user.displayName || user.login}</div>
           <div class="user-list-role ${user.role}">${
           user.role === "admin" ? "👑 Администратор" : "👤 Пользователь"
         }</div>
@@ -324,26 +323,29 @@ class App {
     const status = document.getElementById("userStatus");
     const settingsStatus = document.getElementById("settingsUserStatus");
     const loginBtn = document.getElementById("loginBtn");
+    const registerBtn = document.getElementById("registerBtn");
     const loginSettingsBtn = document.getElementById("loginSettingsBtn");
     const logoutSettingsBtn = document.getElementById("logoutSettingsBtn");
     const userManagement = document.getElementById("userManagement");
     const addUserBtn = document.getElementById("addUserBtn");
     const gamesSettings = document.getElementById("gamesSettings");
 
-    // ===== УСТАНОВКА currentUser В storageManager =====
     if (this.isLoggedIn) {
       this.storageManager.currentUser = this.currentUser;
     } else {
       this.storageManager.currentUser = null;
     }
-    // ================================================
 
     if (this.isLoggedIn) {
+      const userData = this.storageManager.getUserData(this.currentUser);
+      const displayName = userData?.displayName || this.currentUser;
       const roleText = this.userRole === "admin" ? "Админ" : "Пользователь";
-      if (status) status.textContent = `👤 ${this.currentUser} (${roleText})`;
+
+      if (status) status.textContent = `👤 ${displayName} (${roleText})`;
       if (settingsStatus)
-        settingsStatus.textContent = `👤 Текущий статус: ${this.currentUser} (${roleText})`;
-      if (loginBtn) loginBtn.textContent = "🚪 Выйти";
+        settingsStatus.textContent = `👤 Текущий статус: ${displayName} (${roleText})`;
+      if (loginBtn) loginBtn.textContent = "👤 Профиль";
+      if (registerBtn) registerBtn.style.display = "none";
       if (loginSettingsBtn) loginSettingsBtn.style.display = "none";
       if (logoutSettingsBtn) logoutSettingsBtn.style.display = "inline-flex";
 
@@ -360,16 +362,144 @@ class App {
           this.userRole === "admin" ? "block" : "none";
       }
     } else {
-      if (status) status.textContent = "👤 Гость";
+      if (status) status.textContent = "👤 Гость (кликните для входа)";
       if (settingsStatus)
         settingsStatus.textContent = "👤 Текущий статус: Гость";
       if (loginBtn) loginBtn.textContent = "🔑 Войти";
+      if (registerBtn) registerBtn.style.display = "inline-flex";
       if (loginSettingsBtn) loginSettingsBtn.style.display = "inline-flex";
       if (logoutSettingsBtn) logoutSettingsBtn.style.display = "none";
       if (userManagement) userManagement.style.display = "none";
       if (gamesSettings) gamesSettings.style.display = "none";
     }
     this.renderGamesSettings();
+  }
+
+  // ===== ПРОФИЛЬ =====
+  openProfile() {
+    if (!this.isLoggedIn) {
+      this.modals.open("loginModal");
+      return;
+    }
+
+    const userData = this.storageManager.getUserData(this.currentUser);
+    if (userData) {
+      document.getElementById("profileDisplayName").textContent =
+        userData.displayName || this.currentUser;
+      document.getElementById("profileLogin").textContent = this.currentUser;
+      document.getElementById("profileRole").textContent =
+        userData.role === "admin" ? "👑 Администратор" : "👤 Пользователь";
+      document.getElementById("profileAvatar").textContent =
+        userData.role === "admin" ? "👑" : "👤";
+      document.getElementById("profileNameInput").value =
+        userData.displayName || "";
+      document.getElementById("profileLoginInput").value = this.currentUser;
+      document.getElementById("profilePasswordInput").value = "";
+      document.getElementById("profilePasswordConfirm").value = "";
+      this.modals.open("profileModal");
+    }
+  }
+
+  async saveProfile() {
+    const name = document.getElementById("profileNameInput").value.trim();
+    const password = document.getElementById("profilePasswordInput").value;
+    const confirm = document.getElementById("profilePasswordConfirm").value;
+
+    if (!name) {
+      alert("⚠️ Введите имя");
+      return;
+    }
+
+    if (password && password.length < 3) {
+      alert("⚠️ Пароль должен быть не менее 3 символов");
+      return;
+    }
+
+    if (password && password !== confirm) {
+      alert("⚠️ Пароли не совпадают");
+      return;
+    }
+
+    const newData = { displayName: name };
+    if (password) newData.password = password;
+
+    const result = await this.storageManager.updateUser(
+      this.currentUser,
+      newData
+    );
+    if (result) {
+      alert("✅ Профиль обновлён!");
+      this.modals.close("profileModal");
+      this.updateAuthUI();
+    } else {
+      alert("❌ Ошибка обновления профиля");
+    }
+  }
+
+  // ===== РЕГИСТРАЦИЯ =====
+  openRegister() {
+    document.getElementById("registerName").value = "";
+    document.getElementById("registerLogin").value = "";
+    document.getElementById("registerPassword").value = "";
+    document.getElementById("registerPasswordConfirm").value = "";
+    this.modals.open("registerModal");
+  }
+
+  async registerUser() {
+    const name = document.getElementById("registerName").value.trim();
+    const login = document.getElementById("registerLogin").value.trim();
+    const password = document.getElementById("registerPassword").value;
+    const confirm = document.getElementById("registerPasswordConfirm").value;
+
+    if (!name) {
+      alert("⚠️ Введите ваше имя");
+      return;
+    }
+    if (!login || login.length < 3) {
+      alert("⚠️ Логин должен быть не менее 3 символов");
+      return;
+    }
+    if (!password || password.length < 3) {
+      alert("⚠️ Пароль должен быть не менее 3 символов");
+      return;
+    }
+    if (password !== confirm) {
+      alert("⚠️ Пароли не совпадают");
+      return;
+    }
+
+    const result = await this.storageManager.registerUser(
+      login,
+      password,
+      name
+    );
+    if (result) {
+      alert("✅ Аккаунт создан! Теперь вы можете войти.");
+      this.modals.close("registerModal");
+
+      const loginResult = this.storageManager.checkLogin(login, password);
+      if (loginResult.success) {
+        this.isLoggedIn = true;
+        this.currentUser = loginResult.login;
+        this.userRole = loginResult.role;
+        this.storageManager.currentUser = loginResult.login;
+
+        localStorage.setItem(
+          "gameStats_session",
+          JSON.stringify({
+            login: loginResult.login,
+            role: loginResult.role,
+            timestamp: Date.now(),
+          })
+        );
+
+        this.updateAuthUI();
+        this.renderAll();
+        alert(`👋 Добро пожаловать, ${loginResult.login}!`);
+      }
+    } else {
+      alert("❌ Пользователь с таким логином уже существует");
+    }
   }
 
   // Методы для кнопок
@@ -568,6 +698,84 @@ class App {
       ?.addEventListener("keydown", (e) => {
         if (e.key === "Enter") this.auth.handleLogin();
       });
+
+    // ===== РЕГИСТРАЦИЯ =====
+    document.getElementById("registerBtn")?.addEventListener("click", () => {
+      this.openRegister();
+    });
+
+    document
+      .getElementById("saveRegisterBtn")
+      ?.addEventListener("click", () => {
+        this.registerUser();
+      });
+
+    document
+      .getElementById("cancelRegisterModal")
+      ?.addEventListener("click", () => {
+        this.modals.close("registerModal");
+      });
+
+    document
+      .getElementById("closeRegisterModal")
+      ?.addEventListener("click", () => {
+        this.modals.close("registerModal");
+      });
+
+    // Enter в регистрации
+    document
+      .getElementById("registerName")
+      ?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter")
+          document.getElementById("registerLogin")?.focus();
+      });
+    document
+      .getElementById("registerLogin")
+      ?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter")
+          document.getElementById("registerPassword")?.focus();
+      });
+    document
+      .getElementById("registerPassword")
+      ?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter")
+          document.getElementById("registerPasswordConfirm")?.focus();
+      });
+    document
+      .getElementById("registerPasswordConfirm")
+      ?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter")
+          document.getElementById("saveRegisterBtn")?.click();
+      });
+
+    // ===== ПРОФИЛЬ =====
+    document.getElementById("saveProfileBtn")?.addEventListener("click", () => {
+      this.saveProfile();
+    });
+
+    document
+      .getElementById("cancelProfileModal")
+      ?.addEventListener("click", () => {
+        this.modals.close("profileModal");
+      });
+
+    document
+      .getElementById("closeProfileModal")
+      ?.addEventListener("click", () => {
+        this.modals.close("profileModal");
+      });
+
+    document
+      .getElementById("profileLogoutBtn")
+      ?.addEventListener("click", () => {
+        this.modals.close("profileModal");
+        this.auth.handleLogout();
+      });
+
+    // Клик по статусу пользователя для открытия профиля
+    document.getElementById("userStatus")?.addEventListener("click", () => {
+      this.openProfile();
+    });
 
     // Закрытие модалок
     this.modals.setupClosers();

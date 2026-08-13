@@ -62,7 +62,7 @@ export class AppAuth {
 
     loginBtn?.addEventListener("click", () => {
       if (this.app.isLoggedIn) {
-        this.handleLogout();
+        this.app.openProfile();
       } else {
         showLogin();
       }

@@ -95,9 +95,18 @@
           </div>
 
           <div class="header-controls">
-            <span id="userStatus" class="user-status">👤 Гость</span>
+            <span id="userStatus" class="user-status" style="cursor: pointer"
+              >👤 Гость</span
+            >
             <button class="btn btn-outline btn-sm" id="loginBtn">
               🔑 Войти
+            </button>
+            <button
+              class="btn btn-success btn-sm"
+              id="registerBtn"
+              style="display: none"
+            >
+              🎉 Регистрация
             </button>
           </div>
         </header>
@@ -580,6 +589,139 @@
         <div class="modal-footer">
           <button class="btn btn-primary" id="createFirstAdminBtn">
             ✅ Создать администратора
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модалка регистрации -->
+    <div class="modal" id="registerModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>🎉 Добро пожаловать!</h2>
+          <button class="modal-close" id="closeRegisterModal">×</button>
+        </div>
+        <div class="modal-body">
+          <p style="color: var(--text-secondary); margin-bottom: 16px">
+            Создайте аккаунт, чтобы играть в аркады и сохранять свой прогресс!
+          </p>
+          <div class="form-group">
+            <label>👤 Ваше имя</label>
+            <input
+              type="text"
+              id="registerName"
+              placeholder="Как вас называть?"
+            />
+          </div>
+          <div class="form-group">
+            <label>🔑 Логин</label>
+            <input
+              type="text"
+              id="registerLogin"
+              placeholder="Придумайте логин"
+            />
+          </div>
+          <div class="form-group">
+            <label>🔒 Пароль</label>
+            <input
+              type="password"
+              id="registerPassword"
+              placeholder="Минимум 3 символа"
+            />
+          </div>
+          <div class="form-group">
+            <label>🔒 Подтверждение пароля</label>
+            <input
+              type="password"
+              id="registerPasswordConfirm"
+              placeholder="Повторите пароль"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="cancelRegisterModal">
+            Отмена
+          </button>
+          <button class="btn btn-success" id="saveRegisterBtn">
+            ✅ Создать аккаунт
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модалка профиля -->
+    <div class="modal" id="profileModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>👤 Мой профиль</h2>
+          <button class="modal-close" id="closeProfileModal">×</button>
+        </div>
+        <div class="modal-body">
+          <div style="text-align: center; margin-bottom: 16px">
+            <div style="font-size: 48px; margin-bottom: 8px" id="profileAvatar">
+              👤
+            </div>
+            <div
+              style="font-size: 20px; font-weight: bold; color: #4f8cff"
+              id="profileDisplayName"
+            >
+              Имя
+            </div>
+            <div style="font-size: 14px; color: #94a3b8">
+              @<span id="profileLogin">логин</span>
+            </div>
+            <div
+              style="font-size: 12px; color: #94a3b8; margin-top: 4px"
+              id="profileRole"
+            >
+              Пользователь
+            </div>
+          </div>
+          <hr style="border-color: #2a2a4a; margin: 12px 0" />
+
+          <div class="form-group">
+            <label>👤 Имя</label>
+            <input type="text" id="profileNameInput" placeholder="Ваше имя" />
+          </div>
+          <div class="form-group">
+            <label>🔑 Логин</label>
+            <input
+              type="text"
+              id="profileLoginInput"
+              placeholder="Логин"
+              disabled
+            />
+          </div>
+          <div class="form-group">
+            <label>🔒 Новый пароль</label>
+            <input
+              type="password"
+              id="profilePasswordInput"
+              placeholder="Оставьте пустым если не менять"
+            />
+          </div>
+          <div class="form-group">
+            <label>🔒 Подтверждение пароля</label>
+            <input
+              type="password"
+              id="profilePasswordConfirm"
+              placeholder="Повторите пароль"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-danger"
+            id="profileLogoutBtn"
+            style="margin-right: auto"
+          >
+            🚪 Выйти
+          </button>
+          <button class="btn btn-secondary" id="cancelProfileModal">
+            Отмена
+          </button>
+          <button class="btn btn-primary" id="saveProfileBtn">
+            💾 Сохранить
           </button>
         </div>
       </div>
