@@ -330,6 +330,14 @@ class App {
     const addUserBtn = document.getElementById("addUserBtn");
     const gamesSettings = document.getElementById("gamesSettings");
 
+    // ===== УСТАНОВКА currentUser В storageManager =====
+    if (this.isLoggedIn) {
+      this.storageManager.currentUser = this.currentUser;
+    } else {
+      this.storageManager.currentUser = null;
+    }
+    // ================================================
+
     if (this.isLoggedIn) {
       const roleText = this.userRole === "admin" ? "Админ" : "Пользователь";
       if (status) status.textContent = `👤 ${this.currentUser} (${roleText})`;

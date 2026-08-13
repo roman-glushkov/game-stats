@@ -125,6 +125,9 @@ export class AppAuth {
       this.app.currentUser = result.login;
       this.app.userRole = result.role;
 
+      // ← ДОБАВИТЬ ЭТУ СТРОКУ
+      this.app.storageManager.currentUser = result.login;
+
       localStorage.setItem(
         "gameStats_session",
         JSON.stringify({

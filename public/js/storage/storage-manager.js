@@ -13,6 +13,7 @@ export class StorageManager {
     this.stats = new StorageStats(this);
     this.arcade = new StorageArcade(this);
     this.currentGameFilter = "all";
+    this.currentUser = null; // ← добавляем
   }
 
   async loadData() {
@@ -56,57 +57,44 @@ export class StorageManager {
     return JSON.parse(JSON.stringify(DEFAULT_DATA));
   }
 
+  // ===== ОБНОВЛЕНИЕ ТОЛЬКО АРКАДНЫХ ДАННЫХ =====
   async saveArcadeOnly() {
     try {
-      // Загружаем текущие данные с сервера
       const response = await fetch("/api/stats");
       if (!response.ok) throw new Error("Не удалось загрузить stats.json");
       const serverData = await response.json();
 
-      // Объединяем: берём аркадные данные с сервера, но сохраняем только свои записи
       const serverArcade = serverData.arcade || {};
       const localArcade = this.data.arcade || {};
 
-      // Для каждой игры в локальных данных
       for (const gameId in localArcade) {
         if (!serverArcade[gameId]) {
           serverArcade[gameId] = { records: [], gamesPlayed: 0 };
         }
 
-        // Берём записи с сервера
         const serverRecords = serverArcade[gameId].records || [];
         const localRecords = localArcade[gameId].records || [];
 
-        // Обновляем только записи текущего пользователя
         const currentUser = this.currentUser || "Гость";
 
-        // Находим запись пользователя в локальных данных
         const localUserRecord = localRecords.find(
           (r) => r.player === currentUser
         );
 
         if (localUserRecord) {
-          // Удаляем старую запись пользователя с сервера
           const filteredServerRecords = serverRecords.filter(
             (r) => r.player !== currentUser
           );
-          // Добавляем новую запись пользователя
           filteredServerRecords.push(localUserRecord);
-          // Сортируем
           filteredServerRecords.sort((a, b) => b.totalScore - a.totalScore);
           serverArcade[gameId].records = filteredServerRecords;
-
-          // Обновляем gamesPlayed
-          serverArcade[gameId].gamesPlayed =
-            (serverArcade[gameId].gamesPlayed || 0) + 1;
+          // НЕ обновляем gamesPlayed здесь - оно уже обновлено в saveArcadeScore
         }
       }
 
-      // Обновляем данные
       serverData.arcade = serverArcade;
       this.data.arcade = serverArcade;
 
-      // Сохраняем на сервер
       const saveResponse = await fetch("/api/stats", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -129,7 +117,6 @@ export class StorageManager {
       if (!response.ok) throw new Error("Не удалось загрузить stats.json");
       const serverData = await response.json();
 
-      // Обновляем только аркадные данные
       if (serverData.arcade) {
         this.data.arcade = serverData.arcade;
       }
