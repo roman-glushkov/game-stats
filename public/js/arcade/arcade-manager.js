@@ -206,7 +206,9 @@ export class ArcadeManager {
   }
 
   async saveScore(gameId, score) {
-    const player = window.app?.currentUser || "Гость";
+    // Получаем displayName пользователя
+    const userData = this.storageManager.getUserData(window.app?.currentUser);
+    const player = userData?.displayName || window.app?.currentUser || "Гость";
 
     // Сначала загружаем свежие данные
     await this.storageManager.refreshArcadeData();
