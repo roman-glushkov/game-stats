@@ -19,7 +19,18 @@ export class StorageArcade {
   }
 
   async saveArcadeScore(gameId, score, player = null) {
-    if (!player) player = this.storageManager.currentUser || "Гость";
+    // Если player не передан, используем displayName
+    if (!player) {
+      const userData = this.storageManager.getUserData(
+        this.storageManager.currentUser
+      );
+      player =
+        userData?.displayName || this.storageManager.currentUser || "Гость";
+    }
+
+    console.log(
+      `💾 saveArcadeScore: gameId=${gameId}, score=${score}, player=${player}`
+    );
 
     // Сначала загружаем свежие данные
     await this.storageManager.refreshArcadeData();
@@ -29,7 +40,7 @@ export class StorageArcade {
       arcade[gameId] = { records: [], gamesPlayed: 0 };
     }
 
-    // Находим запись игрока
+    // Находим запись игрока по displayName
     const existingIndex = arcade[gameId].records.findIndex(
       (r) => r.player === player
     );
@@ -44,9 +55,12 @@ export class StorageArcade {
       record.winRate =
         Math.round((record.totalScore / record.gamesPlayed) * 10) / 10;
       arcade[gameId].records[existingIndex] = record;
+      console.log(
+        `📝 Обновлена запись: ${player} → totalScore=${record.totalScore}`
+      );
     } else {
       arcade[gameId].records.push({
-        player,
+        player: player,
         totalScore: score,
         bestScore: score,
         lastScore: score,
@@ -54,9 +68,9 @@ export class StorageArcade {
         winRate: score,
         date: new Date().toISOString().slice(0, 10),
       });
+      console.log(`📝 Создана новая запись: ${player} → totalScore=${score}`);
     }
 
-    // Сортируем
     arcade[gameId].records.sort((a, b) => b.totalScore - a.totalScore);
     arcade[gameId].records = arcade[gameId].records.slice(0, 20);
     arcade[gameId].gamesPlayed = (arcade[gameId].gamesPlayed || 0) + 1;

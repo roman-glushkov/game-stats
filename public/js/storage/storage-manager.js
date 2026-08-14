@@ -58,6 +58,7 @@ export class StorageManager {
   }
 
   // ===== ОБНОВЛЕНИЕ ТОЛЬКО АРКАДНЫХ ДАННЫХ =====
+  // ===== ОБНОВЛЕНИЕ ТОЛЬКО АРКАДНЫХ ДАННЫХ =====
   async saveArcadeOnly() {
     try {
       const response = await fetch("/api/stats");
@@ -67,6 +68,15 @@ export class StorageManager {
       const serverArcade = serverData.arcade || {};
       const localArcade = this.data.arcade || {};
 
+      // Получаем displayName текущего пользователя
+      const userData = this.getUserData(this.currentUser);
+      const currentUserDisplayName =
+        userData?.displayName || this.currentUser || "Гость";
+
+      console.log(
+        `🔍 saveArcadeOnly: currentUser=${this.currentUser}, displayName=${currentUserDisplayName}`
+      );
+
       for (const gameId in localArcade) {
         if (!serverArcade[gameId]) {
           serverArcade[gameId] = { records: [], gamesPlayed: 0 };
@@ -75,20 +85,25 @@ export class StorageManager {
         const serverRecords = serverArcade[gameId].records || [];
         const localRecords = localArcade[gameId].records || [];
 
-        const currentUser = this.currentUser || "Гость";
-
+        // Ищем запись пользователя по displayName
         const localUserRecord = localRecords.find(
-          (r) => r.player === currentUser
+          (r) => r.player === currentUserDisplayName
         );
 
         if (localUserRecord) {
+          console.log(
+            `🔄 Найдена запись для ${currentUserDisplayName}:`,
+            localUserRecord
+          );
+          // Удаляем старую запись пользователя (по displayName)
           const filteredServerRecords = serverRecords.filter(
-            (r) => r.player !== currentUser
+            (r) => r.player !== currentUserDisplayName
           );
           filteredServerRecords.push(localUserRecord);
           filteredServerRecords.sort((a, b) => b.totalScore - a.totalScore);
           serverArcade[gameId].records = filteredServerRecords;
-          // НЕ обновляем gamesPlayed здесь - оно уже обновлено в saveArcadeScore
+        } else {
+          console.log(`ℹ️ Нет локальной записи для ${currentUserDisplayName}`);
         }
       }
 
