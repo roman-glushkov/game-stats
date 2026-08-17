@@ -1,11 +1,10 @@
 export class StatsFilter {
-  constructor(dataManager, renderer) {
-    this.dataManager = dataManager;
+  constructor(renderer) {
     this.renderer = renderer;
   }
 
   update() {
-    const games = this.dataManager.getAvailableGames();
+    const games = this.renderer.getGroupAvailableGames();
     const filterSelect = document.getElementById("gameFilter");
     if (!filterSelect) return;
 

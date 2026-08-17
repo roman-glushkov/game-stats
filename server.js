@@ -23,6 +23,13 @@ if (!fs.existsSync(DATA_DIR)) {
   console.log(`📁 Создана папка: ${DATA_DIR}`);
 }
 
+// ===== ПАПКА ДЛЯ ГРУПП =====
+const GROUPS_DIR = path.join(DATA_DIR, "groups");
+if (!fs.existsSync(GROUPS_DIR)) {
+  fs.mkdirSync(GROUPS_DIR, { recursive: true });
+  console.log(`📁 Создана папка групп: ${GROUPS_DIR}`);
+}
+
 const statsPath = path.join(DATA_DIR, "stats.json");
 const loginsPath = path.join(DATA_DIR, "logins.json");
 const BACKUP_DIR = path.join(DATA_DIR, "backups");
@@ -304,6 +311,107 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ===== API: /api/groups =====
+  if (req.url === "/api/groups") {
+    // GET - получить все группы
+    if (req.method === "GET") {
+      try {
+        const groups = {};
+        if (fs.existsSync(GROUPS_DIR)) {
+          const files = fs.readdirSync(GROUPS_DIR);
+          files.forEach((file) => {
+            if (file.endsWith(".json")) {
+              const filePath = path.join(GROUPS_DIR, file);
+              const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+              groups[data.id] = data;
+            }
+          });
+        }
+        res.writeHead(200, {
+          "Content-Type": "application/json; charset=utf-8",
+        });
+        res.end(JSON.stringify(groups));
+      } catch (err) {
+        console.error("❌ Ошибка чтения групп:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+      return;
+    }
+
+    // POST - создать группу
+    if (req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk) => {
+        body += chunk;
+      });
+      req.on("end", () => {
+        try {
+          const group = JSON.parse(body);
+          const filePath = path.join(GROUPS_DIR, `${group.id}.json`);
+          fs.writeFileSync(filePath, JSON.stringify(group, null, 2));
+          console.log(`✅ Группа создана: ${group.id} (${group.name})`);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true }));
+        } catch (err) {
+          console.error("❌ Ошибка создания группы:", err);
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: false, error: err.message }));
+        }
+      });
+      return;
+    }
+
+    // PUT - обновить группу
+    if (req.method === "PUT") {
+      let body = "";
+      req.on("data", (chunk) => {
+        body += chunk;
+      });
+      req.on("end", () => {
+        try {
+          const { groupId, group } = JSON.parse(body);
+          const filePath = path.join(GROUPS_DIR, `${groupId}.json`);
+          fs.writeFileSync(filePath, JSON.stringify(group, null, 2));
+          console.log(`✅ Группа обновлена: ${groupId}`);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true }));
+        } catch (err) {
+          console.error("❌ Ошибка обновления группы:", err);
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: false, error: err.message }));
+        }
+      });
+      return;
+    }
+
+    res.writeHead(405);
+    res.end();
+    return;
+  }
+
+  // ===== API: /api/groups/:id (DELETE) =====
+  if (req.url.startsWith("/api/groups/") && req.method === "DELETE") {
+    const groupId = req.url.split("/").pop();
+    const filePath = path.join(GROUPS_DIR, `${groupId}.json`);
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`🗑️ Группа удалена: ${groupId}`);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true }));
+      } else {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: "Группа не найдена" }));
+      }
+    } catch (err) {
+      console.error("❌ Ошибка удаления группы:", err);
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: err.message }));
+    }
+    return;
+  }
+
   // ===== STATIC FILES =====
   // Обрабатываем только GET запросы для статики
   if (req.method !== "GET") {
@@ -421,5 +529,6 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(`📁 Public: ${PUBLIC_DIR}`);
   console.log(`📄 stats.json: ${statsPath}`);
   console.log(`📄 logins.json: ${loginsPath}`);
+  console.log(`📁 Группы: ${GROUPS_DIR}`);
   console.log(`💾 Бекапы: ${BACKUP_DIR}`);
 });

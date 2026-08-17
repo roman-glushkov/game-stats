@@ -1,14 +1,14 @@
 export class StatsGames {
-  constructor(dataManager) {
-    this.dataManager = dataManager;
+  constructor(renderer) {
+    this.renderer = renderer;
   }
 
   render() {
     const container = document.getElementById("gamesStatsGrid");
     if (!container) return;
 
-    const games = this.dataManager
-      .getAvailableGames()
+    const games = this.renderer
+      .getGroupAvailableGames()
       .filter((g) => g !== "all" && g !== "Все игры");
 
     if (!games || games.length === 0) {
@@ -16,26 +16,39 @@ export class StatsGames {
       return;
     }
 
+    const groupData = this.renderer.getGroupData();
+    const players = groupData?.players || {};
+
     let html = "";
     games.forEach((game) => {
-      const players = this.dataManager.getAllStats(game);
-      const gameSetting = this.dataManager.getGameSetting(game);
+      const gameSetting = this.renderer.getGroupGameSetting(game);
 
       let totalWins = 0,
         totalLosses = 0;
-      players.forEach((p) => {
-        totalWins += p.wins;
-        totalLosses += p.losses;
-      });
+
+      for (const name in players) {
+        const gameStats = players[name]?.games?.[game];
+        if (gameStats) {
+          totalWins += gameStats.wins || 0;
+          totalLosses += gameStats.losses || 0;
+        }
+      }
 
       let totalGames = 0;
       if (gameSetting === "wins") totalGames = totalWins;
       else if (gameSetting === "losses") totalGames = totalLosses;
       else totalGames = Math.floor((totalWins + totalLosses) / 2);
 
-      const sorted = [...players].sort((a, b) => b.wins - a.wins);
-      const leader = sorted[0]?.name || "—";
-      const leaderWins = sorted[0]?.wins || 0;
+      // Находим лидера по этой игре
+      let leader = "—";
+      let leaderWins = 0;
+      for (const name in players) {
+        const gameStats = players[name]?.games?.[game];
+        if (gameStats && (gameStats.wins || 0) > leaderWins) {
+          leaderWins = gameStats.wins || 0;
+          leader = name;
+        }
+      }
 
       const gameEmoji = this.getGameEmoji(game);
 

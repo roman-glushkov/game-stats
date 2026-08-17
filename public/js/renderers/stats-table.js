@@ -1,11 +1,10 @@
 export class StatsTable {
-  constructor(dataManager, renderer) {
-    this.dataManager = dataManager;
+  constructor(renderer) {
     this.renderer = renderer;
   }
 
   render() {
-    const players = this.dataManager.getAllStats(this.renderer.currentFilter);
+    const players = this.renderer.getGroupStats();
     const tbody = document.getElementById("statsBody");
     if (!tbody) return;
 
@@ -19,7 +18,35 @@ export class StatsTable {
       return;
     }
 
-    const sorted = [...players].sort((a, b) => b.wins - a.wins);
+    // Если фильтр не "all", фильтруем по конкретной игре
+    let filteredPlayers = players;
+    if (this.renderer.currentFilter !== "all") {
+      const groupId = this.renderer.getGroupId();
+      const groupData = this.renderer.getGroupData();
+      if (groupId && groupData) {
+        filteredPlayers = [];
+        const gameFilter = this.renderer.currentFilter;
+        for (const name in groupData.players) {
+          const playerData = groupData.players[name];
+          const gameStats = playerData.games?.[gameFilter];
+          if (gameStats) {
+            const wins = gameStats.wins || 0;
+            const losses = gameStats.losses || 0;
+            const total = wins + losses;
+            filteredPlayers.push({
+              name: name,
+              wins: wins,
+              losses: losses,
+              total: total,
+              winRate:
+                total === 0 ? 0 : Number(((wins / total) * 100).toFixed(1)),
+            });
+          }
+        }
+      }
+    }
+
+    const sorted = (filteredPlayers || players).sort((a, b) => b.wins - a.wins);
     const isAllGames = this.renderer.currentFilter === "all";
 
     let html = "";
@@ -39,7 +66,7 @@ export class StatsTable {
 
       let showWinRate = true;
       if (!isAllGames) {
-        const gameSetting = this.dataManager.getGameSetting(
+        const gameSetting = this.renderer.getGroupGameSetting(
           this.renderer.currentFilter
         );
         if (gameSetting === "wins" || gameSetting === "losses")
@@ -48,7 +75,7 @@ export class StatsTable {
 
       let buttons = "";
       if (!isAllGames) {
-        const gameSetting = this.dataManager.getGameSetting(
+        const gameSetting = this.renderer.getGroupGameSetting(
           this.renderer.currentFilter
         );
         if (gameSetting === "wins") {
