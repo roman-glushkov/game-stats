@@ -519,7 +519,13 @@ export class ArcadeYahtzee {
     const playerScore = this.player.points;
     setTimeout(() => {
       if (this.manager) {
-        this.manager.saveScore("yahtzee", playerScore);
+        // ГОСТЬ — не сохраняем
+        if (window.app?.isLoggedIn) {
+          this.manager.saveScore("yahtzee", playerScore);
+        } else {
+          console.log("👤 Гость — очки не сохраняются");
+          this.manager.renderLeaderboard();
+        }
       }
     }, 500);
   }

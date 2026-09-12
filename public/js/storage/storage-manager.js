@@ -57,8 +57,6 @@ export class StorageManager {
     return JSON.parse(JSON.stringify(DEFAULT_DATA));
   }
 
-  // ===== ОБНОВЛЕНИЕ ТОЛЬКО АРКАДНЫХ ДАННЫХ =====
-  // ===== ОБНОВЛЕНИЕ ТОЛЬКО АРКАДНЫХ ДАННЫХ =====
   async saveArcadeOnly() {
     try {
       const response = await fetch("/api/stats");
@@ -68,7 +66,6 @@ export class StorageManager {
       const serverArcade = serverData.arcade || {};
       const localArcade = this.data.arcade || {};
 
-      // Получаем displayName текущего пользователя
       const userData = this.getUserData(this.currentUser);
       const currentUserDisplayName =
         userData?.displayName || this.currentUser || "Гость";
@@ -95,13 +92,21 @@ export class StorageManager {
             `🔄 Найдена запись для ${currentUserDisplayName}:`,
             localUserRecord
           );
-          // Удаляем старую запись пользователя (по displayName)
           const filteredServerRecords = serverRecords.filter(
             (r) => r.player !== currentUserDisplayName
           );
           filteredServerRecords.push(localUserRecord);
           filteredServerRecords.sort((a, b) => b.totalScore - a.totalScore);
           serverArcade[gameId].records = filteredServerRecords;
+
+          // ===== ПЕРЕСЧИТЫВАЕМ gamesPlayed =====
+          serverArcade[gameId].gamesPlayed = filteredServerRecords.reduce(
+            (sum, r) => sum + (r.gamesPlayed || 0),
+            0
+          );
+          console.log(
+            `🔄 gamesPlayed для ${gameId}: ${serverArcade[gameId].gamesPlayed}`
+          );
         } else {
           console.log(`ℹ️ Нет локальной записи для ${currentUserDisplayName}`);
         }
@@ -125,7 +130,6 @@ export class StorageManager {
     }
   }
 
-  // ===== ЗАГРУЗКА СВЕЖИХ ДАННЫХ =====
   async refreshArcadeData() {
     try {
       const response = await fetch("/api/stats");
@@ -133,6 +137,14 @@ export class StorageManager {
       const serverData = await response.json();
 
       if (serverData.arcade) {
+        // ===== ПЕРЕСЧИТЫВАЕМ gamesPlayed при загрузке =====
+        for (const gameId in serverData.arcade) {
+          const records = serverData.arcade[gameId].records || [];
+          serverData.arcade[gameId].gamesPlayed = records.reduce(
+            (sum, r) => sum + (r.gamesPlayed || 0),
+            0
+          );
+        }
         this.data.arcade = serverData.arcade;
       }
 

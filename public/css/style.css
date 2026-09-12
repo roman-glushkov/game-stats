@@ -1926,3 +1926,97 @@ body {
 .user-status:hover {
   opacity: 0.7;
 }
+
+/* ===== ГОСТЕВОЙ РЕЖИМ ===== */
+.guest-mode .blur-data {
+  filter: blur(6px);
+  user-select: none;
+  pointer-events: none;
+  opacity: 0.7;
+  transition: filter 0.3s ease;
+}
+
+.guest-mode .guest-lock {
+  position: relative;
+}
+
+.guest-mode .guest-lock::after {
+  content: "🔒 Войдите чтобы увидеть";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(26, 26, 46, 0.95);
+  color: #94a3b8;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid #2a2a4a;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Затемнение таблицы для гостя */
+.guest-mode #section-leaderboard .table-wrapper,
+.guest-mode #section-players .players-list,
+.guest-mode #section-charts .charts-grid,
+.guest-mode #section-games .games-stats-grid,
+.guest-mode #section-dashboard .stats-grid,
+.guest-mode #section-dashboard .mvp-card,
+.guest-mode #section-dashboard .top-players {
+  position: relative;
+  filter: blur(4px);
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.guest-mode #section-leaderboard .table-wrapper::after,
+.guest-mode #section-players .players-list::after,
+.guest-mode #section-charts .charts-grid::after,
+.guest-mode #section-games .games-stats-grid::after,
+.guest-mode #section-dashboard .stats-grid::after {
+  content: "🔒 Войдите в группу чтобы увидеть статистику";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(26, 26, 46, 0.98);
+  color: #4f8cff;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 2px solid #4f8cff;
+  z-index: 10;
+  pointer-events: auto;
+  filter: none;
+  box-shadow: 0 4px 20px rgba(79, 140, 255, 0.3);
+}
+
+/* Скрываем кнопки действий для гостя */
+.guest-mode .btn-add-player,
+.guest-mode .btn-add-game,
+.guest-mode [onclick*="addWin"],
+.guest-mode [onclick*="addLoss"],
+.guest-mode [onclick*="deleteUser"] {
+  display: none !important;
+}
+
+/* Скрываем боковые кнопки для гостя */
+.guest-mode .sidebar-actions {
+  display: none !important;
+}
+
+/* Аркады доступны для игры */
+.guest-mode #section-arcade {
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.guest-mode #section-arcade .arcade-card {
+  pointer-events: auto !important;
+}

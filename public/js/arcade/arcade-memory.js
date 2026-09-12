@@ -307,7 +307,13 @@ export class ArcadeMemory {
 
     setTimeout(() => {
       if (this.manager) {
-        this.manager.saveScore("memory", playerScore);
+        // ГОСТЬ — не сохраняем
+        if (window.app?.isLoggedIn) {
+          this.manager.saveScore("memory", playerScore);
+        } else {
+          console.log("👤 Гость — очки не сохраняются");
+          this.manager.renderLeaderboard();
+        }
       }
     }, 500);
   }

@@ -56,7 +56,7 @@ export class StorageArcade {
         Math.round((record.totalScore / record.gamesPlayed) * 10) / 10;
       arcade[gameId].records[existingIndex] = record;
       console.log(
-        `📝 Обновлена запись: ${player} → totalScore=${record.totalScore}`
+        `📝 Обновлена запись: ${player} → totalScore=${record.totalScore}, gamesPlayed=${record.gamesPlayed}`
       );
     } else {
       arcade[gameId].records.push({
@@ -71,9 +71,18 @@ export class StorageArcade {
       console.log(`📝 Создана новая запись: ${player} → totalScore=${score}`);
     }
 
+    // ===== ПЕРЕСЧИТЫВАЕМ ОБЩЕЕ КОЛИЧЕСТВО ИГР =====
+    arcade[gameId].gamesPlayed = arcade[gameId].records.reduce(
+      (sum, r) => sum + (r.gamesPlayed || 0),
+      0
+    );
+    console.log(
+      `🔄 Общее gamesPlayed для ${gameId}: ${arcade[gameId].gamesPlayed}`
+    );
+
+    // Сортируем
     arcade[gameId].records.sort((a, b) => b.totalScore - a.totalScore);
     arcade[gameId].records = arcade[gameId].records.slice(0, 20);
-    arcade[gameId].gamesPlayed = (arcade[gameId].gamesPlayed || 0) + 1;
 
     this.storageManager.data.arcade = arcade;
     await this.storageManager.saveArcadeOnly();

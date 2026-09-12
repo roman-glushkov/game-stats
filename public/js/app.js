@@ -42,7 +42,7 @@ class App {
     this.navigation.setup(this);
     this.auth.setup();
 
-    // ===== ПРОВЕРКА ГРУППЫ =====
+    // ===== ПРОВЕРКА =====
     if (this.isLoggedIn) {
       const isInGroup = this.groupManager.isUserInGroup(this.currentUser);
       if (!isInGroup) {
@@ -51,7 +51,9 @@ class App {
         this.renderAll();
       }
     } else {
+      // ===== ГОСТЬ =====
       this.renderAll();
+      this.enableGuestMode();
     }
 
     if (!this.storageManager.hasUsers()) {
@@ -64,8 +66,27 @@ class App {
     setTimeout(() => this.arcadeManager.renderLeaderboard(), 1000);
   }
 
+  // ===== ГОСТЕВОЙ РЕЖИМ =====
+  enableGuestMode() {
+    document.body.classList.add("guest-mode");
+    console.log("👤 Гостевой режим включён");
+  }
+
+  disableGuestMode() {
+    document.body.classList.remove("guest-mode");
+    console.log("👤 Гостевой режим выключен");
+  }
+
+  updateGuestMode() {
+    if (!this.isLoggedIn) {
+      this.enableGuestMode();
+    } else {
+      this.disableGuestMode();
+    }
+  }
+
+  // ===== WELCOME SCREEN =====
   showWelcomeScreen() {
-    // Скрываем все секции
     const sections = document.querySelectorAll(".section");
     sections.forEach((s) => {
       if (s.id !== "section-welcome") {
@@ -73,7 +94,6 @@ class App {
       }
     });
 
-    // Создаём welcome если его нет
     let welcome = document.getElementById("section-welcome");
     if (!welcome) {
       welcome = document.createElement("section");
@@ -81,7 +101,6 @@ class App {
       welcome.className = "section active";
       welcome.innerHTML = `
       <div class="welcome-container" style="max-width: 800px; margin: 0 auto; padding: 20px;">
-        <!-- Приветствие -->
         <div style="text-align: center; padding: 30px 20px; background: #1a1a2e; border-radius: 16px; border: 1px solid #2a2a4a; margin-bottom: 24px;">
           <h1 style="font-size: 32px; margin-bottom: 12px;">🎮 Добро пожаловать в GameStats Pro!</h1>
           <p style="color: var(--text-secondary); font-size: 18px; margin-bottom: 20px;">
@@ -101,11 +120,6 @@ class App {
           <h3 style="color: var(--text-secondary); margin-bottom: 16px; font-size: 18px;">📋 Доступные группы</h3>
           <div id="availableGroups"></div>
         </div>
-
-        <div style="background: #1a1a2e; border-radius: 16px; padding: 20px; border: 1px solid #2a2a4a;">
-          <h3 style="color: var(--text-secondary); margin-bottom: 16px; font-size: 18px;">🕹️ Рейтинг аркад</h3>
-          <div id="welcomeArcadeContent"></div>
-        </div>
       </div>
     `;
       document.querySelector(".sections-wrapper").appendChild(welcome);
@@ -119,83 +133,11 @@ class App {
       document.getElementById("joinGroupBtn")?.addEventListener("click", () => {
         this.openJoinGroupModal();
       });
-
-      this.renderWelcomeArcadeLeaderboard();
     }
 
     welcome.classList.add("active");
     document.getElementById("pageTitle").textContent = "🏠 Добро пожаловать";
     this.renderAvailableGroups();
-  }
-
-  renderWelcomeArcadeLeaderboard() {
-    const container = document.getElementById("welcomeArcadeContent");
-    if (!container) return;
-
-    const arcade = this.storageManager.getArcadeData();
-    const games = [
-      { id: "memory", label: "🎴 Память", icon: "🧠" },
-      { id: "yahtzee", label: "🎲 Ятзи", icon: "🎲" },
-    ];
-
-    let html = "";
-    games.forEach((game) => {
-      const records = this.storageManager.getArcadeLeaderboard(game.id);
-      const gamesPlayed = arcade[game.id]?.gamesPlayed || 0;
-      const bestScore =
-        records.length > 0
-          ? Math.max(...records.map((r) => r.bestScore || 0))
-          : 0;
-
-      // Строим таблицу рекордов
-      let recordsHtml = "";
-      if (records.length > 0) {
-        recordsHtml = `
-        <div style="margin-top: 8px;">
-          ${records
-            .slice(0, 5)
-            .map((r, i) => {
-              const medal =
-                i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`;
-              const rankClass =
-                i === 0
-                  ? "rank-1"
-                  : i === 1
-                  ? "rank-2"
-                  : i === 2
-                  ? "rank-3"
-                  : "";
-              return `
-              <div style="display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: #22223a; border-radius: 6px; margin-bottom: 2px;">
-                <span style="font-size: 14px; min-width: 30px; text-align: center;">${medal}</span>
-                <span style="font-weight: 500; flex: 1;">${r.player}</span>
-                <span style="color: #f59e0b; font-weight: 600;">⭐ ${r.totalScore}</span>
-                <span style="color: #94a3b8; font-size: 12px;">🎯 ${r.gamesPlayed}</span>
-              </div>
-            `;
-            })
-            .join("")}
-        </div>
-      `;
-      } else {
-        recordsHtml =
-          '<div style="color: #94a3b8; text-align: center; padding: 16px;">Нет рекордов</div>';
-      }
-
-      html += `
-      <div style="background: #22223a; border-radius: 10px; padding: 12px; margin-bottom: 12px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <span style="font-weight: 600; font-size: 16px;">${game.icon} ${game.label}</span>
-          <span style="font-size: 12px; color: #94a3b8;">🎮 ${gamesPlayed} игр | 🏆 ${bestScore}</span>
-        </div>
-        ${recordsHtml}
-      </div>
-    `;
-    });
-
-    container.innerHTML =
-      html ||
-      '<div style="text-align: center; padding: 20px; color: #94a3b8;">Нет данных по аркадам</div>';
   }
 
   renderAvailableGroups() {
@@ -219,9 +161,6 @@ class App {
           <div style="color: #94a3b8; font-size: 12px;">👥 ${
             group.members ? group.members.length : 0
           } участников</div>
-          <div style="color: #64748b; font-size: 11px;">Создана: ${
-            group.createdBy
-          }</div>
         </div>
         ${
           isMember
@@ -322,20 +261,39 @@ class App {
   }
 
   renderAll() {
-    // Проверяем, в группе ли пользователь
+    const isLoggedIn = this.isLoggedIn;
     const isInGroup =
-      this.isLoggedIn && this.groupManager?.isUserInGroup(this.currentUser);
+      isLoggedIn && this.groupManager?.isUserInGroup(this.currentUser);
 
-    if (!isInGroup) {
-      // Если не в группе, показываем welcome с аркадами
-      this.showWelcomeScreen();
-      // Рендерим только аркады
+    // ===== ГОСТЬ =====
+    if (!isLoggedIn) {
+      this.statsRenderer.renderAll();
+      this.chartManager.renderAll();
+      this.renderDashboard();
+      this.renderTopLosers();
+      this.renderPlayersList();
+      this.renderUsersList();
+      this.renderGamesSettings();
       this.arcadeManager.renderGames();
       this.arcadeManager.renderLeaderboard();
+      this.updateNavBadge();
+      this.updateGameSelects();
+      this.updatePlayerGameSelect();
+      this.updateGuestMode();
       return;
     }
 
-    // Полный рендеринг для тех, кто в группе
+    // ===== ЗАЛОГИНЕН, НО НЕ В ГРУППЕ =====
+    if (!isInGroup) {
+      this.showWelcomeScreen();
+      this.arcadeManager.renderGames();
+      this.arcadeManager.renderLeaderboard();
+      this.disableGuestMode();
+      return;
+    }
+
+    // ===== В ГРУППЕ =====
+    this.disableGuestMode();
     this.statsRenderer.renderAll();
     this.chartManager.renderAll();
     this.renderDashboard();
@@ -350,13 +308,66 @@ class App {
     this.updatePlayerGameSelect();
   }
 
+  // ===== ДЛЯ ГОСТЯ: берём данные из группы #1 (или первой доступной) =====
+  getGuestGroupId() {
+    const groups = this.groupManager.groups;
+    for (const id in groups) {
+      return id; // берём первую группу
+    }
+    return null;
+  }
+
   renderDashboard() {
-    const groupId = this.groupManager.getUserGroup(this.currentUser);
-    if (!groupId) {
-      // Если нет группы, показываем пустой дашборд
-      this.showWelcomeScreen();
+    // ===== ГОСТЬ =====
+    if (!this.isLoggedIn) {
+      const guestGroupId = this.getGuestGroupId();
+      if (!guestGroupId) {
+        document.getElementById("totalGames").textContent = "0";
+        document.getElementById("totalPlayers").textContent = "0";
+        document.getElementById("totalWins").textContent = "0";
+        document.getElementById("avgWinRate").textContent = "0%";
+        document.getElementById("mvpName").textContent = "—";
+        document.getElementById("mvpWins").textContent = "0";
+        document.getElementById("mvpRate").textContent = "0%";
+        return;
+      }
+
+      const players = this.groupManager.getGroupStats(guestGroupId);
+      const totalWins = players.reduce((sum, p) => sum + p.wins, 0);
+      const totalGames = players.reduce(
+        (sum, p) => sum + Math.floor((p.wins + p.losses) / 2),
+        0
+      );
+
+      document.getElementById("totalGames").textContent = totalGames;
+      document.getElementById("totalPlayers").textContent = players.length;
+      document.getElementById("totalWins").textContent = totalWins;
+
+      const avgWR =
+        players.length > 0
+          ? (
+              players.reduce((sum, p) => sum + p.winRate, 0) / players.length
+            ).toFixed(1)
+          : 0;
+      document.getElementById("avgWinRate").textContent = avgWR + "%";
+
+      const sorted = [...players].sort((a, b) => b.wins - a.wins);
+      if (sorted.length > 0) {
+        const mvp = sorted[0];
+        document.getElementById("mvpName").textContent = mvp.name;
+        document.getElementById("mvpWins").textContent = mvp.wins;
+        document.getElementById("mvpRate").textContent = mvp.winRate + "%";
+      } else {
+        document.getElementById("mvpName").textContent = "—";
+        document.getElementById("mvpWins").textContent = "0";
+        document.getElementById("mvpRate").textContent = "0%";
+      }
       return;
     }
+
+    // ===== ЗАЛОГИНЕН =====
+    const groupId = this.groupManager.getUserGroup(this.currentUser);
+    if (!groupId) return;
 
     const players = this.groupManager.getGroupStats(groupId);
     const totalWins = players.reduce((sum, p) => sum + p.wins, 0);
@@ -414,7 +425,10 @@ class App {
   }
 
   renderTopLosers() {
-    const groupId = this.groupManager.getUserGroup(this.currentUser);
+    // ===== ГОСТЬ =====
+    let groupId = this.isLoggedIn
+      ? this.groupManager.getUserGroup(this.currentUser)
+      : this.getGuestGroupId();
     if (!groupId) return;
 
     const players = this.groupManager.getGroupStats(groupId);
@@ -429,31 +443,36 @@ class App {
 
     const medals = ["🥇", "🥈", "🥉"];
     const rankClasses = ["gold", "silver", "bronze"];
+    const isGuest = !this.isLoggedIn;
 
     container.innerHTML = sorted
       .map(
         (p, i) => `
-    <div class="top-player-item loser-item">
-      <div class="top-player-rank ${rankClasses[i] || ""}">${medals[i]}</div>
-      <div class="top-player-avatar" style="background: ${this.colorUtils.get(
-        p.name
-      )}">
-        ${p.name.charAt(0).toUpperCase()}
+      <div class="top-player-item loser-item">
+        <div class="top-player-rank ${rankClasses[i] || ""}">${medals[i]}</div>
+        <div class="top-player-avatar" style="background: ${this.colorUtils.get(
+          p.name
+        )}">
+          ${isGuest ? "?" : p.name.charAt(0).toUpperCase()}
+        </div>
+        <div class="top-player-info">
+          <div class="top-player-name ${isGuest ? "blur-data" : ""}">${
+          p.name
+        }</div>
+          <div class="top-player-stats ${isGuest ? "blur-data" : ""}">😵 ${
+          p.losses
+        } поражений • ${p.winRate}% WR</div>
+        </div>
       </div>
-      <div class="top-player-info">
-        <div class="top-player-name">${p.name}</div>
-        <div class="top-player-stats">😵 ${p.losses} поражений • ${
-          p.winRate
-        }% WR</div>
-      </div>
-    </div>
-  `
+    `
       )
       .join("");
   }
 
   renderPlayersList() {
-    const groupId = this.groupManager.getUserGroup(this.currentUser);
+    let groupId = this.isLoggedIn
+      ? this.groupManager.getUserGroup(this.currentUser)
+      : this.getGuestGroupId();
     if (!groupId) return;
 
     const groupData = this.groupManager.getGroupData(groupId);
@@ -467,6 +486,8 @@ class App {
       return;
     }
 
+    const isGuest = !this.isLoggedIn;
+
     container.innerHTML = players
       .map((name) => {
         const stats = this.groupManager.getGroupPlayerStats(groupId, name);
@@ -475,13 +496,15 @@ class App {
         <div class="player-list-avatar" style="background: ${this.colorUtils.get(
           name
         )}">
-          ${name.charAt(0).toUpperCase()}
+          ${isGuest ? "?" : name.charAt(0).toUpperCase()}
         </div>
         <div class="player-list-info">
-          <div class="player-list-name">${name}</div>
-          <div class="player-list-stats">🏆 ${stats?.totalWins || 0} побед • ${
-          stats?.winRate || 0
-        }% WR</div>
+          <div class="player-list-name ${
+            isGuest ? "blur-data" : ""
+          }">${name}</div>
+          <div class="player-list-stats ${isGuest ? "blur-data" : ""}">🏆 ${
+          stats?.totalWins || 0
+        } побед • ${stats?.winRate || 0}% WR</div>
         </div>
       </div>
     `;
@@ -499,24 +522,28 @@ class App {
       return;
     }
 
+    const isGuest = !this.isLoggedIn;
+
     container.innerHTML = users
       .map(
         (user) => `
       <div class="user-list-item">
         <div class="user-list-info">
-          <div class="user-list-name">${user.displayName || user.login}</div>
+          <div class="user-list-name ${isGuest ? "blur-data" : ""}">${
+          user.displayName || user.login
+        }</div>
           <div class="user-list-role ${user.role}">${
           user.role === "admin" ? "👑 Администратор" : "👤 Пользователь"
         }</div>
         </div>
         ${
-          user.login !== "admin"
+          !isGuest && user.login !== "admin"
             ? `
           <div class="user-list-actions">
             <button class="btn btn-sm btn-danger" onclick="window.app.deleteUser('${user.login}')">🗑️</button>
           </div>
         `
-            : `<span style="color: var(--text-muted); font-size: 12px;">Главный админ</span>`
+            : ""
         }
       </div>
     `
@@ -541,10 +568,7 @@ class App {
     }
 
     const groupId = this.groupManager.getUserGroup(this.currentUser);
-    if (!groupId) {
-      container.innerHTML = '<div class="empty-state">Нет группы</div>';
-      return;
-    }
+    if (!groupId) return;
 
     const games = this.groupManager
       .getGroupAvailableGames(groupId)
@@ -556,7 +580,6 @@ class App {
       return;
     }
 
-    const groupData = this.groupManager.getGroupData(groupId);
     let html = "";
     games.forEach((game) => {
       const currentSetting = this.groupManager.getGroupGameSetting(
@@ -596,7 +619,9 @@ class App {
   }
 
   updateNavBadge() {
-    const groupId = this.groupManager.getUserGroup(this.currentUser);
+    let groupId = this.isLoggedIn
+      ? this.groupManager.getUserGroup(this.currentUser)
+      : this.getGuestGroupId();
     if (!groupId) return;
 
     const count = this.groupManager.getGroupPlayerNames(groupId).length;
@@ -605,7 +630,9 @@ class App {
   }
 
   updateGameSelects() {
-    const groupId = this.groupManager.getUserGroup(this.currentUser);
+    let groupId = this.isLoggedIn
+      ? this.groupManager.getUserGroup(this.currentUser)
+      : this.getGuestGroupId();
     if (!groupId) return;
 
     const players = this.groupManager.getGroupPlayerNames(groupId);
@@ -614,9 +641,6 @@ class App {
 
     if (!winnerSelect || !loserSelect) return;
 
-    const currentWinner = winnerSelect.value;
-    const currentLoser = loserSelect.value;
-
     winnerSelect.innerHTML = '<option value="">-- выберите --</option>';
     loserSelect.innerHTML = '<option value="">-- выберите --</option>';
 
@@ -624,13 +648,12 @@ class App {
       winnerSelect.innerHTML += `<option value="${p}">${p}</option>`;
       loserSelect.innerHTML += `<option value="${p}">${p}</option>`;
     });
-
-    if (players.includes(currentWinner)) winnerSelect.value = currentWinner;
-    if (players.includes(currentLoser)) loserSelect.value = currentLoser;
   }
 
   updatePlayerGameSelect() {
-    const groupId = this.groupManager.getUserGroup(this.currentUser);
+    let groupId = this.isLoggedIn
+      ? this.groupManager.getUserGroup(this.currentUser)
+      : this.getGuestGroupId();
     if (!groupId) return;
 
     const select = document.getElementById("playerGameSelect");
@@ -675,18 +698,15 @@ class App {
       if (loginSettingsBtn) loginSettingsBtn.style.display = "none";
       if (logoutSettingsBtn) logoutSettingsBtn.style.display = "inline-flex";
 
-      if (userManagement) {
+      if (userManagement)
         userManagement.style.display =
           this.userRole === "admin" ? "block" : "none";
-      }
-      if (addUserBtn) {
+      if (addUserBtn)
         addUserBtn.style.display =
           this.userRole === "admin" ? "inline-flex" : "none";
-      }
-      if (gamesSettings) {
+      if (gamesSettings)
         gamesSettings.style.display =
           this.userRole === "admin" ? "block" : "none";
-      }
     } else {
       if (status) status.textContent = "👤 Гость (кликните для входа)";
       if (settingsStatus)
@@ -700,6 +720,7 @@ class App {
     }
     this.renderGamesSettings();
     this.navigation.updateNavVisibility();
+    this.updateGuestMode();
   }
 
   // ===== ПРОФИЛЬ =====
@@ -736,12 +757,10 @@ class App {
       alert("⚠️ Введите имя");
       return;
     }
-
     if (password && password.length < 3) {
       alert("⚠️ Пароль должен быть не менее 3 символов");
       return;
     }
-
     if (password && password !== confirm) {
       alert("⚠️ Пароли не совпадают");
       return;
@@ -829,7 +848,7 @@ class App {
     }
   }
 
-  // Методы для кнопок
+  // ===== ДОБАВЛЕНИЕ =====
   async addWin(name, game = "Все игры") {
     if (!this.isLoggedIn) {
       alert("⚠️ Для редактирования необходимо войти");
@@ -843,19 +862,11 @@ class App {
     }
 
     const groupData = this.groupManager.getGroupData(groupId);
-    if (!groupData) return;
+    if (!groupData || !groupData.players[name]) return;
 
-    if (!groupData.players[name]) {
-      alert(`Ошибка: игрок "${name}" не найден`);
-      return;
-    }
-
-    if (!groupData.players[name].games) {
-      groupData.players[name].games = {};
-    }
-    if (!groupData.players[name].games[game]) {
+    if (!groupData.players[name].games) groupData.players[name].games = {};
+    if (!groupData.players[name].games[game])
       groupData.players[name].games[game] = { wins: 0, losses: 0 };
-    }
 
     groupData.players[name].games[game].wins++;
 
@@ -876,19 +887,11 @@ class App {
     }
 
     const groupData = this.groupManager.getGroupData(groupId);
-    if (!groupData) return;
+    if (!groupData || !groupData.players[name]) return;
 
-    if (!groupData.players[name]) {
-      alert(`Ошибка: игрок "${name}" не найден`);
-      return;
-    }
-
-    if (!groupData.players[name].games) {
-      groupData.players[name].games = {};
-    }
-    if (!groupData.players[name].games[game]) {
+    if (!groupData.players[name].games) groupData.players[name].games = {};
+    if (!groupData.players[name].games[game])
       groupData.players[name].games[game] = { wins: 0, losses: 0 };
-    }
 
     groupData.players[name].games[game].losses++;
 
@@ -937,7 +940,6 @@ class App {
       });
 
     // Сохранение игрока
-    // Сохранение игрока
     document
       .getElementById("savePlayerBtn")
       ?.addEventListener("click", async () => {
@@ -959,8 +961,6 @@ class App {
         }
 
         const groupData = this.groupManager.getGroupData(groupId);
-
-        // Проверяем, есть ли уже такой игрок в группе
         if (groupData.players && groupData.players[name]) {
           alert("Игрок уже существует в группе");
           return;
@@ -972,10 +972,8 @@ class App {
         const losses =
           parseInt(document.getElementById("playerLossesInput")?.value) || 0;
 
-        // Добавляем игрока в группу
         if (!groupData.players) groupData.players = {};
         groupData.players[name] = { games: {} };
-
         if (game && (wins > 0 || losses > 0)) {
           groupData.players[name].games[game] = { wins, losses };
         }
@@ -990,7 +988,6 @@ class App {
         if (lossesInput) lossesInput.value = "0";
       });
 
-    // Сохранение игры
     // Сохранение игры
     document
       .getElementById("saveGameBtn")
@@ -1022,8 +1019,6 @@ class App {
         }
 
         const groupData = this.groupManager.getGroupData(groupId);
-
-        // Проверяем, что игроки существуют в группе
         if (
           !groupData.players ||
           !groupData.players[winner] ||
@@ -1033,20 +1028,16 @@ class App {
           return;
         }
 
-        // Добавляем победу победителю
         if (!groupData.players[winner].games)
           groupData.players[winner].games = {};
-        if (!groupData.players[winner].games[game]) {
+        if (!groupData.players[winner].games[game])
           groupData.players[winner].games[game] = { wins: 0, losses: 0 };
-        }
         groupData.players[winner].games[game].wins++;
 
-        // Добавляем поражение проигравшему
         if (!groupData.players[loser].games)
           groupData.players[loser].games = {};
-        if (!groupData.players[loser].games[game]) {
+        if (!groupData.players[loser].games[game])
           groupData.players[loser].games[game] = { wins: 0, losses: 0 };
-        }
         groupData.players[loser].games[game].losses++;
 
         await this.groupManager.updateGroup(groupId, groupData);
@@ -1124,30 +1115,26 @@ class App {
         if (e.key === "Enter") this.auth.handleLogin();
       });
 
-    // ===== РЕГИСТРАЦИЯ =====
+    // РЕГИСТРАЦИЯ
     document.getElementById("registerBtn")?.addEventListener("click", () => {
       this.openRegister();
     });
-
     document
       .getElementById("saveRegisterBtn")
       ?.addEventListener("click", () => {
         this.registerUser();
       });
-
     document
       .getElementById("cancelRegisterModal")
       ?.addEventListener("click", () => {
         this.modals.close("registerModal");
       });
-
     document
       .getElementById("closeRegisterModal")
       ?.addEventListener("click", () => {
         this.modals.close("registerModal");
       });
 
-    // Enter в регистрации
     document
       .getElementById("registerName")
       ?.addEventListener("keydown", (e) => {
@@ -1173,31 +1160,26 @@ class App {
           document.getElementById("saveRegisterBtn")?.click();
       });
 
-    // ===== ПРОФИЛЬ =====
+    // ПРОФИЛЬ
     document.getElementById("saveProfileBtn")?.addEventListener("click", () => {
       this.saveProfile();
     });
-
     document
       .getElementById("cancelProfileModal")
       ?.addEventListener("click", () => {
         this.modals.close("profileModal");
       });
-
     document
       .getElementById("closeProfileModal")
       ?.addEventListener("click", () => {
         this.modals.close("profileModal");
       });
-
     document
       .getElementById("profileLogoutBtn")
       ?.addEventListener("click", () => {
         this.modals.close("profileModal");
         this.auth.handleLogout();
       });
-
-    // Клик по статусу пользователя для открытия профиля
     document.getElementById("userStatus")?.addEventListener("click", () => {
       this.openProfile();
     });

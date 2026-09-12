@@ -24,7 +24,7 @@ export class ArcadeManager {
         description: "Найди пары одинаковых карточек против бота",
         players: 1,
         icon: "🧠",
-        requiresAuth: true,
+        requiresAuth: false, // ← ГОСТЬ МОЖЕТ ИГРАТЬ
       },
       {
         id: "yahtzee",
@@ -32,7 +32,7 @@ export class ArcadeManager {
         description: "Бросай кубики и собирай комбинации против бота",
         players: 1,
         icon: "🎲",
-        requiresAuth: true,
+        requiresAuth: false, // ← ГОСТЬ МОЖЕТ ИГРАТЬ
       },
       {
         id: "coming_soon",
@@ -65,6 +65,11 @@ export class ArcadeManager {
           buttonHtml = `<button class="btn btn-primary btn-sm">Играть</button>`;
         }
 
+        // ===== ДЛЯ ГОСТЯ ПОКАЗЫВАЕМ "Играть без сохранения" =====
+        if (!isLoggedIn && isAvailable && !game.requiresAuth) {
+          buttonHtml = `<button class="btn btn-primary btn-sm">🎮 Играть</button>`;
+        }
+
         return `
           <div class="arcade-card" ${clickHandler} style="${style}">
             <div class="arcade-icon">${game.icon}</div>
@@ -77,8 +82,8 @@ export class ArcadeManager {
                   : ""
               }
               ${
-                game.requiresAuth && !isLoggedIn
-                  ? `<div style="color: var(--text-muted); font-size: 11px; margin-top: 4px;">🔒 Требуется вход</div>`
+                !isLoggedIn && isAvailable
+                  ? `<div style="color: #f59e0b; font-size: 11px; margin-top: 4px;">🎮 Демо-режим (без сохранения)</div>`
                   : ""
               }
             </div>
@@ -94,27 +99,21 @@ export class ArcadeManager {
   }
 
   startGame(gameId) {
-    // Проверка авторизации перед запуском игры
-    if (!window.app?.isLoggedIn) {
-      alert("⚠️ Для игры в аркады необходимо войти в систему");
-      return;
-    }
+    // ===== ГОСТЬ МОЖЕТ ИГРАТЬ =====
+    // Проверка авторизации убрана
 
     // Если игра уже активна - закрываем её и запускаем новую
     if (this.arcadeActive) {
-      // Закрываем текущую игру
       this.arcadeActive = false;
       this.arcadeGame = null;
       this.gameType = null;
 
-      // Очищаем контейнер
       const container = document.getElementById("arcadeGameContainer");
       if (container) {
         container.innerHTML = "";
         container.style.display = "none";
       }
 
-      // Показываем сетку игр
       const grid = document.getElementById("arcadeGrid");
       if (grid) grid.style.display = "grid";
     }
@@ -206,6 +205,13 @@ export class ArcadeManager {
   }
 
   async saveScore(gameId, score) {
+    // ===== ГОСТЬ — НЕ СОХРАНЯЕМ =====
+    if (!window.app?.isLoggedIn) {
+      console.log("👤 Гость — очки не сохраняются");
+      this.renderLeaderboard();
+      return;
+    }
+
     // Получаем displayName пользователя
     const userData = this.storageManager.getUserData(window.app?.currentUser);
     const player = userData?.displayName || window.app?.currentUser || "Гость";

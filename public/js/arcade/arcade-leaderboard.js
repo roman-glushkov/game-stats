@@ -52,9 +52,7 @@ export class ArcadeLeaderboard {
     const records = this.storageManager.getArcadeLeaderboard(game.id);
     const gamesPlayed = arcade[game.id]?.gamesPlayed || 0;
 
-    const filteredRecords = isLoggedIn
-      ? records
-      : records.filter((r) => r.player !== "Гость");
+    const filteredRecords = records;
 
     const bestScore =
       filteredRecords.length > 0
@@ -73,25 +71,27 @@ export class ArcadeLeaderboard {
         <div class="arcade-leaderboard-stats" style="display: flex; gap: 12px; margin-bottom: 8px;">
           <div class="stat-card-mini" style="background: #22223a; padding: 4px 12px; border-radius: 6px;">
             <div class="stat-label" style="font-size: 10px; color: #94a3b8;">🏆 Лучший</div>
-            <div class="stat-value" style="font-size: 18px; font-weight: bold; color: #f59e0b;">${bestScore}</div>
+            <div class="stat-value" style="font-size: 18px; font-weight: bold; color: #f59e0b;">${
+              isLoggedIn
+                ? bestScore
+                : `<span class="blur-data">${bestScore}</span>`
+            }</div>
           </div>
           <div class="stat-card-mini" style="background: #22223a; padding: 4px 12px; border-radius: 6px;">
             <div class="stat-label" style="font-size: 10px; color: #94a3b8;">👥 Игроков</div>
-            <div class="stat-value" style="font-size: 18px; font-weight: bold; color: #4f8cff;">${totalPlayers}</div>
+            <div class="stat-value" style="font-size: 18px; font-weight: bold; color: #4f8cff;">
+            ${
+              isLoggedIn
+                ? totalPlayers
+                : `<span class="blur-data">${totalPlayers}</span>`
+            }
+          </div>
           </div>
         </div>
         <div class="arcade-records-list">
+          
           ${
-            !isLoggedIn
-              ? `
-            <div style="text-align: center; padding: 16px; color: #94a3b8; font-size: 14px;">
-              🔒 <a href="#" onclick="document.getElementById('loginBtn').click(); return false;" style="color: #4f8cff; text-decoration: underline;">Войдите</a>, чтобы видеть рейтинг
-            </div>
-          `
-              : ""
-          }
-          ${
-            filteredRecords.length === 0 && isLoggedIn
+            filteredRecords.length === 0
               ? '<div style="padding: 16px; text-align: center; color: #94a3b8; font-size: 14px;">Нет рекордов</div>'
               : ""
           }
@@ -118,24 +118,40 @@ export class ArcadeLeaderboard {
               `
                 : "";
 
-              return `
-                <div class="arcade-record-item" style="display: grid; grid-template-columns: 30px 1fr 0.8fr 0.8fr 0.8fr 0.8fr auto; gap: 4px; padding: 4px 8px; background: #22223a; border-radius: 4px; margin-bottom: 2px; font-size: 12px; align-items: center;">
-                  <span class="arcade-record-rank ${rankClass}" style="text-align: center;">${medal}</span>
-                  <span class="arcade-record-player" style="font-weight: 500;">${
-                    record.player
-                  }</span>
-                  <span class="arcade-record-score" style="text-align: center; color: #f59e0b;">⭐ ${
-                    record.totalScore || 0
-                  }</span>
-                  <span class="arcade-record-games" style="text-align: center; color: #94a3b8;">🎯 ${
+              const playerDisplay = isLoggedIn
+                ? record.player
+                : `<span class="blur-data">${record.player}</span>`;
+
+              const scoreDisplay = isLoggedIn
+                ? `⭐ ${record.totalScore || 0}`
+                : `<span class="blur-data">⭐ ${record.totalScore || 0}</span>`;
+
+              const gamesDisplay = isLoggedIn
+                ? `🎯 ${record.gamesPlayed || 0}`
+                : `<span class="blur-data">🎯 ${
                     record.gamesPlayed || 0
-                  }</span>
-                  <span class="arcade-record-games" style="text-align: center; color: #4f8cff;">📈 ${
+                  }</span>`;
+
+              const avgDisplay = isLoggedIn
+                ? `📈 ${
                     typeof avgScore === "number" ? avgScore.toFixed(1) : "0.0"
-                  }</span>
-                  <span class="arcade-record-date" style="text-align: center; color: #64748b; font-size: 10px;">${
-                    record.date || "-"
-                  }</span>
+                  }`
+                : `<span class="blur-data">📈 ${
+                    typeof avgScore === "number" ? avgScore.toFixed(1) : "0.0"
+                  }</span>`;
+
+              const dateDisplay = isLoggedIn
+                ? record.date || "-"
+                : `<span class="blur-data">${record.date || "-"}</span>`;
+
+              return `
+                <div class="arcade-record-item" style="...">
+                  <span class="arcade-record-rank ${rankClass}" style="text-align: center;">${medal}</span>
+                  <span class="arcade-record-player" style="font-weight: 500;">${playerDisplay}</span>
+                  <span class="arcade-record-score" style="text-align: center; color: #f59e0b;">${scoreDisplay}</span>
+                  <span class="arcade-record-games" style="text-align: center; color: #94a3b8;">${gamesDisplay}</span>
+                  <span class="arcade-record-games" style="text-align: center; color: #4f8cff;">${avgDisplay}</span>
+                  <span class="arcade-record-date" style="text-align: center; color: #64748b; font-size: 10px;">${dateDisplay}</span>
                   ${deleteBtn ? `<span>${deleteBtn}</span>` : ""}
                 </div>
               `;

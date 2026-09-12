@@ -76,8 +76,15 @@ export class AppNavigation {
     const app = this.app;
     if (!app) return;
 
-    const isInGroup =
-      app.isLoggedIn && app.groupManager?.isUserInGroup(app.currentUser);
+    // ===== ГОСТЬ ВИДИТ ВСЁ =====
+    if (!app.isLoggedIn) {
+      document.querySelectorAll(".nav-item").forEach((item) => {
+        item.style.display = "";
+      });
+      return;
+    }
+
+    const isInGroup = app.groupManager?.isUserInGroup(app.currentUser);
     const isLoggedIn = app.isLoggedIn;
 
     const groupOnlyItems = ["players", "leaderboard", "charts", "games"];
@@ -90,7 +97,6 @@ export class AppNavigation {
         item.style.display = isLoggedIn && isInGroup ? "" : "none";
       }
 
-      // dashboard показываем ВСЕГДА если залогинен
       if (section === "dashboard") {
         item.style.display = isLoggedIn ? "" : "none";
       }
@@ -104,14 +110,44 @@ export class AppNavigation {
   onSectionChange(section) {
     if (!this.app) return;
 
-    const isInGroup =
-      this.app.isLoggedIn &&
-      this.app.groupManager?.isUserInGroup(this.app.currentUser);
     const isLoggedIn = this.app.isLoggedIn;
+    const isInGroup =
+      isLoggedIn && this.app.groupManager?.isUserInGroup(this.app.currentUser);
 
-    // ===== ДЛЯ НЕ В ГРУППЕ =====
+    // ===== ГОСТЬ =====
+    if (!isLoggedIn) {
+      if (section === "dashboard") {
+        this.app.renderDashboard();
+        this.app.renderTopLosers();
+      }
+      if (section === "players") {
+        this.app.renderPlayersList();
+      }
+      if (section === "leaderboard") {
+        this.app.statsRenderer.renderAll();
+      }
+      if (section === "charts") {
+        setTimeout(() => {
+          this.app.chartManager.destroyAll();
+          this.app.chartManager.renderAll();
+        }, 100);
+      }
+      if (section === "games") {
+        this.app.statsRenderer.renderAll();
+      }
+      if (section === "arcade") {
+        this.app.arcadeManager.renderGames();
+        this.app.arcadeManager.renderLeaderboard();
+      }
+      if (section === "settings") {
+        this.app.renderUsersList();
+        this.app.renderGamesSettings();
+      }
+      return;
+    }
+
+    // ===== ЗАЛОГИНЕН, НО НЕ В ГРУППЕ =====
     if (isLoggedIn && !isInGroup) {
-      // Если перешли на аркады — показываем только аркады
       if (section === "arcade") {
         const sections = document.querySelectorAll(".section");
         sections.forEach((s) => s.classList.remove("active"));
@@ -124,7 +160,6 @@ export class AppNavigation {
         return;
       }
 
-      // Если перешли на настройки — показываем настройки
       if (section === "settings") {
         const sections = document.querySelectorAll(".section");
         sections.forEach((s) => s.classList.remove("active"));
@@ -137,46 +172,11 @@ export class AppNavigation {
         return;
       }
 
-      // Главная — показываем welcome
-      if (section === "dashboard") {
-        this.app.showWelcomeScreen();
-        return;
-      }
-
-      // Для всех остальных разделов — показываем welcome
       this.app.showWelcomeScreen();
       return;
     }
 
-    // ===== ДЛЯ ГОСТЕЙ =====
-    if (!isLoggedIn) {
-      if (section === "arcade") {
-        this.app.arcadeManager.renderGames();
-        this.app.arcadeManager.renderLeaderboard();
-        return;
-      }
-      if (section === "settings") {
-        this.app.renderUsersList();
-        this.app.renderGamesSettings();
-        return;
-      }
-      // Гости видят только аркады и настройки
-      if (this.sections.arcade) {
-        this.sections.arcade.classList.add("active");
-        this.sections.dashboard?.classList.remove("active");
-        this.sections.players?.classList.remove("active");
-        this.sections.leaderboard?.classList.remove("active");
-        this.sections.charts?.classList.remove("active");
-        this.sections.games?.classList.remove("active");
-        this.sections.settings?.classList.remove("active");
-        document.getElementById("pageTitle").textContent = "🕹️ Аркады";
-        this.app.arcadeManager.renderGames();
-        this.app.arcadeManager.renderLeaderboard();
-      }
-      return;
-    }
-
-    // ===== ДЛЯ ПОЛЬЗОВАТЕЛЕЙ В ГРУППЕ =====
+    // ===== В ГРУППЕ =====
     if (section === "charts") {
       setTimeout(() => {
         this.app.chartManager.destroyAll();
